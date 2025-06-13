@@ -11,7 +11,6 @@ tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B")
 model = AutoModelForCausalLM.from_pretrained(
     "meta-llama/Llama-3.1-8B",
     device_map="auto",  # Automatically handle device placement
-    torch_dtype=torch.float16  # Use half precision for better memory efficiency
 )
 
 # Create pipeline with the model
