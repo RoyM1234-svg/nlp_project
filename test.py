@@ -41,9 +41,7 @@ def create_basic_cot_prompt(suspects, mystery_text):
     INSTRUCTIONS:
     1. Read the mystery carefully
     2. Identify key evidence and clues
-    3. Analyze each suspect's alibi and behavior
-    4. Use logical reasoning to eliminate innocent suspects
-    5. Identify the guilty suspect based on evidence
+    3. Identify the guilty suspect based on evidence
 
     Think through this step-by-step:
     - First, what is the crime and what are the key facts?
@@ -83,8 +81,8 @@ def run_inference(pipe, prompt, max_new_tokens=100, temperature=0.7):
         temperature=temperature
     )[0]["generated_text"]
     
+    output = output[len(prompt):].strip()
     return output
-
 # Example usage:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -165,3 +163,4 @@ As though having a second dinner, everyone gathered around the table downstairs.
     # Run inference
     result = run_inference(pipe, prompt)
     print(f"Output: {result}")
+    
