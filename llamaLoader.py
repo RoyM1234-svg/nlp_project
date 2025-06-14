@@ -3,25 +3,25 @@ import torch
 import os
 import argparse
 
-def load_model(save_directory):
+def load_model(save_directory, model_name):
     # Enable GPU if available
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
     # Define save directory - make sure it's in Google Drive
     if not save_directory.startswith('/content/drive'):
-        save_directory = f"/content/drive/MyDrive/{save_directory.lstrip('./')}"
+        save_directory = f"/content/drive/MyDrive/nlp_project{save_directory.lstrip('./')}"
     
     os.makedirs(save_directory, exist_ok=True)
     print(f"Will save to: {save_directory}")
 
     # Load model with optimizations for Colab Pro
     print("Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     
     print("Loading model...")
     model = AutoModelForCausalLM.from_pretrained(
-        "meta-llama/Llama-3.1-8B",
+        model_name,
         device_map="auto",  # Automatically handle device placement
         torch_dtype=torch.float16,  # Use half precision to save memory
     )
@@ -56,7 +56,7 @@ def load_model(save_directory):
     for i, prompt in enumerate(inputs, 1):
         output = pipe(
             prompt,
-            max_new_tokens=50,
+            max_new_tokens=300,
             do_sample=False,
             temperature=0.7
         )[0]["generated_text"]
@@ -66,8 +66,10 @@ def main():
     parser = argparse.ArgumentParser(description='Load and save Llama model')
     parser.add_argument('--save_path', type=str, default="saved_llama_model",
                         help='Path where to save the model (default: saved_llama_model)')
+    parser.add_argument('--model_name', type=str, default="meta-llama/Llama-3.1-8B-Instruct",
+                        help='Name of the model to load (default: meta-llama/Llama-3.1-8B-Instruct)')
     args = parser.parse_args()
-    load_model(args.save_path)
+    load_model(args.save_path, args.model_name)
 
 if __name__ == "__main__":
     main()
