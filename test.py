@@ -61,7 +61,7 @@ def create_basic_cot_prompt(suspects, mystery_text):
     
     return prompt
 
-def run_inference(pipe, prompt, max_new_tokens=20, temperature=0.7):
+def run_inference(pipe, prompt, max_new_tokens=100, temperature=0.7):
     """
     Run inference with the loaded model.
     
