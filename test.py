@@ -14,7 +14,7 @@ def load_saved_model(model_path):
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         device_map="auto",
-        # torch_dtype=torch.float16,
+        torch_dtype=torch.float16,
     )
 
     pipe = pipeline(
@@ -61,7 +61,7 @@ def create_basic_cot_prompt(suspects, mystery_text):
     
     return prompt
 
-def run_inference(pipe, prompt, max_new_tokens=300, temperature=0.7):
+def run_inference(pipe, prompt, max_new_tokens=5, temperature=0.7):
     """
     Run inference with the loaded model.
     
