@@ -10,7 +10,7 @@ def load_model(save_directory, model_name):
 
     # Define save directory - make sure it's in Google Drive
     if not save_directory.startswith('/content/drive'):
-        save_directory = f"/content/drive/MyDrive/nlp_project{save_directory.lstrip('./')}"
+        save_directory = f"/content/drive/MyDrive/nlp_project/{save_directory.lstrip('./')}"
     
     os.makedirs(save_directory, exist_ok=True)
     print(f"Will save to: {save_directory}")
@@ -57,7 +57,7 @@ def load_model(save_directory, model_name):
         output = pipe(
             prompt,
             max_new_tokens=300,
-            do_sample=False,
+            do_sample=True,
             temperature=0.7
         )[0]["generated_text"]
         print(f"--- Example {i} ---\nPrompt: {prompt}\nOutput: {output}\n")
