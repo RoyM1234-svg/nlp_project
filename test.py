@@ -35,29 +35,29 @@ def create_basic_cot_prompt(suspects, mystery_text):
     
     prompt = f"""<s>[INST] You are a detective solving a mystery. Your task is to identify the guilty suspect from the following suspects based on the evidence provided.
 
-SUSPECTS:
-{suspects_list}
+    SUSPECTS:
+    {suspects_list}
 
-INSTRUCTIONS:
-1. Read the mystery carefully
-2. Identify key evidence and clues
-3. Analyze each suspect's alibi and behavior
-4. Use logical reasoning to eliminate innocent suspects
-5. Identify the guilty party based on evidence
+    INSTRUCTIONS:
+    1. Read the mystery carefully
+    2. Identify key evidence and clues
+    3. Analyze each suspect's alibi and behavior
+    4. Use logical reasoning to eliminate innocent suspects
+    5. Identify the guilty suspect based on evidence
 
-Think through this step-by-step:
-- First, what is the crime and what are the key facts?
-- Second, what evidence points to each suspect?
-- Third, which suspects can be eliminated and why?
-- Finally, who is guilty and what proves it?
+    Think through this step-by-step:
+    - First, what is the crime and what are the key facts?
+    - Second, what evidence points to each suspect?
+    - Third, which suspects can be eliminated and why?
+    - Finally, who is guilty and what proves it?
 
-REQUIRED OUTPUT FORMAT:
-Reasoning: [Step-by-step analysis of each suspect and the evidence for/against them]
-Answer: [Name of the guilty suspect]
+    REQUIRED OUTPUT FORMAT:
+    Reasoning: [Step-by-step analysis of each suspect and the evidence for/against them]
+    Answer: [Name of the guilty suspect]
 
-MYSTERY:
-{mystery_text}
-[/INST]"""
+    MYSTERY:
+    {mystery_text}
+    [/INST]"""
     
     return prompt
 
