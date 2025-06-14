@@ -32,34 +32,22 @@ def create_basic_cot_prompt(suspects, mystery_text):
     Basic Chain-of-Thought prompt that works for any mystery.
     """
     suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
-    
-    prompt = f"""<s>[INST] You are a detective solving a mystery. Your task is to identify the guilty suspect from the following suspects based on the evidence provided.
+    prompt = f"""
+    You are an expert detective. Read the following mystery and determine the most likely guilty suspect from the list of options provided.
 
-    SUSPECTS:
+    *Mystery Story:*
+    {mystery_text}
+
+    *Suspect List:*
     {suspects_list}
 
-    INSTRUCTIONS:
-    1. Read the mystery carefully
-    2. Identify key evidence and clues
-    3. Identify the guilty suspect based on evidence
-
-    Think through this step-by-step:
-    - First, what is the crime and what are the key facts?
-    - Second, what evidence points to each suspect?
-    - Third, which suspects can be eliminated and why?
-    - Finally, who is guilty and what proves it?
-
-    REQUIRED OUTPUT FORMAT:
-    Reasoning: [Step-by-step analysis of each suspect and the evidence for/against them]
-    Answer: [Name of the guilty suspect]
-
-    MYSTERY:
-    {mystery_text}
-    [/INST]"""
+    Based on the evidence in the story, who is the guilty suspect? First, explain your chain of thought. Then, to conclude your entire response, state the final answer formatted exactly like this: ==guilty suspect's name==
+    For example, if you believe the guilty suspect is (a) John Smith, your response must end with: ==(a) John Smith==
+    """
     
     return prompt
 
-def run_inference(pipe, prompt, max_new_tokens=100, temperature=0.7):
+def run_inference(pipe, prompt, max_new_tokens=500, temperature=0.7):
     """
     Run inference with the loaded model.
     
