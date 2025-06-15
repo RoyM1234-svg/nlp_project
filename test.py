@@ -1,6 +1,6 @@
 
 import argparse
-from detective_model import LLamaDetectiveModel
+from models.detective_model import LLamaDetectiveModel
 
 # Example usage:
 if __name__ == "__main__":
