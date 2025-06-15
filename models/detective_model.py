@@ -7,38 +7,19 @@ import re
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 
 
-class DetectiveStoppingCriteria(StoppingCriteria):
-    def __init__(self, tokenizer, prompt_length: int):
-        self.tokenizer = tokenizer
-        self.prompt_length = prompt_length
-        
-    def __call__(self, input_ids, scores, **kwargs):
-        if input_ids.shape[1] <= self.prompt_length:
-            return False
-        # Check last 30 tokens for complete ==X== pattern
-        text = self.tokenizer.decode(input_ids[0, -30:], skip_special_tokens=True)
-        
-        # Stop immediately when we see ==something==
-        if re.search(r'==[^=]+==', text):
-            return True
-        return False
-
-
 class DetectiveModel(ABC):
     def __init__(self,
                  model_path,
                  is_quantized=True,
                  max_new_tokens=2000,
                  temperature=0.7,
-                 batch_size=1,
-                 use_stopping_criteria=True,
+                 use_stopping_criteria=False,
                 ):
         self.model_path = model_path
         self.is_quantized = is_quantized
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self.use_stopping_criteria = use_stopping_criteria
-        self.batch_size = batch_size
         self.load_model()
 
     def load_model(self):        
@@ -120,21 +101,6 @@ class DetectiveModel(ABC):
         """
         pass
 
-    # @staticmethod
-    # def extract_guilty_suspect(full_response: str) -> str:
-    #     """Extract the guilty suspect from the model response.
-        
-    #     Args:
-    #     # Look for the pattern ==suspect name== at the end of the response
-    #     pattern = r'==([^=]+)=='
-    #     matches = re.findall(pattern, full_response)
-    #     if matches:
-    #         return matches[-1].strip()
-    #     else:
-    #         print("No suspect found in expected format '==suspect name==' in the model response")
-    #         return "Unknown"
-        
-
 
 class LLamaDetectiveModel(DetectiveModel):
     def __init__(self,
@@ -142,10 +108,9 @@ class LLamaDetectiveModel(DetectiveModel):
                  is_quantized=True,
                  max_new_tokens=2000,
                  temperature=0.7,
-                 batch_size=1,
-                 use_stopping_criteria=True,
+                 use_stopping_criteria=False,
                 ):
-        super().__init__(model_path, is_quantized, max_new_tokens, temperature, batch_size, use_stopping_criteria)
+        super().__init__(model_path, is_quantized, max_new_tokens, temperature, use_stopping_criteria)
 
     def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
@@ -188,3 +153,20 @@ class LLamaDetectiveModel(DetectiveModel):
                 result = match[0] if match[0] else match[1]
                 return result.strip()
         return "Unknown"
+    
+
+class DetectiveStoppingCriteria(StoppingCriteria):
+    def __init__(self, tokenizer, prompt_length: int):
+        self.tokenizer = tokenizer
+        self.prompt_length = prompt_length
+        
+    def __call__(self, input_ids, scores, **kwargs):
+        if input_ids.shape[1] <= self.prompt_length:
+            return False
+        # Check last 30 tokens for complete ==X== pattern
+        text = self.tokenizer.decode(input_ids[0, -30:], skip_special_tokens=True)
+        
+        # Stop immediately when we see ==something==
+        if re.search(r'==[^=]+==', text):
+            return True
+        return False

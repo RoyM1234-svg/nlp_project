@@ -6,7 +6,6 @@ import argparse
 from models.detective_model import DetectiveModel, LLamaDetectiveModel
 
 
-
 def load_detective_puzzles_dataset(csv_path):
     """Load the detective puzzles dataset from a CSV file."""
     df = pd.read_csv(csv_path)
@@ -78,7 +77,6 @@ def main():
     
     print("\nEvaluation Results:")
     print(f"Accuracy: {metrics['accuracy']:.4f}")
-    
     
     with open('evaluation_results.json', 'w') as f:
         json.dump(metrics, f, indent=4)
