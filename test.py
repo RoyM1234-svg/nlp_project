@@ -1,8 +1,6 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers.pipelines import pipeline
-import torch
+
 import argparse
-from detective_model import DetectiveModel
+from detective_model import LLamaDetectiveModel
 
 # Example usage:
 if __name__ == "__main__":
@@ -11,7 +9,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Load the saved model
     model_path = args.model_path
-    model = DetectiveModel(model_path, is_quantized=True)
+    model = LLamaDetectiveModel(model_path, is_quantized=True, use_stopping_criteria=False)
     
     mystery_text = """
     Lightning flashed through the castle window, before the sky returned to darkness and rain.
