@@ -6,10 +6,13 @@ import re
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 
 class DetectiveStoppingCriteria(StoppingCriteria):
-    def __init__(self, tokenizer):
+    def __init__(self, tokenizer, prompt_length: int):
         self.tokenizer = tokenizer
+        self.prompt_length = prompt_length
         
     def __call__(self, input_ids, scores, **kwargs):
+        if input_ids.shape[1] <= self.prompt_length:
+            return False
         # Check last 30 tokens for complete ==X== pattern
         text = self.tokenizer.decode(input_ids[0, -30:], skip_special_tokens=True)
         
@@ -55,7 +58,6 @@ class DetectiveModel:
             tokenizer=self.tokenizer,
             torch_dtype=torch.float16,
             device_map="auto",
-            
         )
 
     def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
