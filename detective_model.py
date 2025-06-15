@@ -1,3 +1,4 @@
+from transformers import AutoModelForCausalLM
 from transformers.pipelines import pipeline
 import torch
 import re
@@ -11,13 +12,28 @@ class DetectiveModel:
         self.load_model()
 
     def load_model(self):
-        generator = pipeline(
-        "text-generation",
-        model=self.model_path,
-        torch_dtype=torch.float16 if self.is_quantized else torch.float32,
-        device_map="auto"
+        if self.is_quantized:
+            # Load your saved model WITH 8-bit quantization
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_path,  # Your saved model directory
+                load_in_8bit=True,  # Apply quantization during loading
+                device_map="auto",
+                trust_remote_code=True,
+            )
+        else:
+            # Load without quantization
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_path,
+                torch_dtype=torch.float16,
+                device_map="auto"
+            )
+
+        self.generator = pipeline(
+            "text-generation",
+            model=self.model,
+            torch_dtype=torch.float16,
+            device_map="auto"
         )
-        self.generator = generator
 
     def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
         prompt = self._create_prompt(mystery_text, suspects)
@@ -33,6 +49,8 @@ class DetectiveModel:
         predicted_suspect = self._extract_guilty_suspect(full_response)
         
         return full_response, predicted_suspect
+    
+    def run_inference_batch(self, mystery_texts: list[str], suspects_lists: list[list[str]]) -> list[tuple[str, str]]:
 
 
     # Private methods
@@ -62,6 +80,7 @@ class DetectiveModel:
         if matches:
             return matches[-1].strip()
         else:
-            raise ValueError("No suspect found in expected format '==suspect name==' in the model response")
+            print("No suspect found in expected format '==suspect name==' in the model response")
+            return "Unknown"
         
         

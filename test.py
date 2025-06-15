@@ -2,75 +2,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.pipelines import pipeline
 import torch
 import argparse
+from detective_model import DetectiveModel
 
-def load_saved_model(model_path):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using device: {device}")
-
-    print("Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    
-    print("Loading model...")
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path,
-        device_map="auto",
-        torch_dtype=torch.float16,
-    )
-
-    pipe = pipeline(
-        "text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        device_map="auto"
-    )
-    
-    return pipe
-
-
-def create_basic_cot_prompt(suspects, mystery_text):
-    """
-    Basic Chain-of-Thought prompt that works for any mystery.
-    """
-    suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
-    prompt = f"""
-    You are an expert detective. Read the following mystery and determine the most likely guilty suspect from the list of options provided.
-
-    *Mystery Story:*
-    {mystery_text}
-
-    *Suspect List:*
-    {suspects_list}
-
-    Based on the evidence in the story, who is the guilty suspect? First, explain your chain of thought. Then, to conclude your entire response, state the final answer formatted exactly like this: ==guilty suspect's name==
-    For example, if you believe the guilty suspect is (a) John Smith, your response must end with: ==(a) John Smith==
-    """
-    
-    return prompt
-
-def run_inference(pipe, prompt, max_new_tokens=500, temperature=0.7):
-    """
-    Run inference with the loaded model.
-    
-    Args:
-        pipe: The loaded pipeline
-        prompt: The input text to generate from
-        max_new_tokens: Maximum number of tokens to generate
-        temperature: Controls randomness (higher = more random)
-    
-    Returns:
-        Generated text
-    """
-    print("starting inference...")
-
-    output = pipe(
-        prompt,
-        max_new_tokens=max_new_tokens,
-        do_sample=True,
-        temperature=temperature
-    )[0]["generated_text"]
-    
-    output = output[len(prompt):].strip()
-    return output
 # Example usage:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -78,7 +11,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Load the saved model
     model_path = args.model_path
-    pipe = load_saved_model(model_path)
+    model = DetectiveModel(model_path, is_quantized=True)
     
     mystery_text = """
     Lightning flashed through the castle window, before the sky returned to darkness and rain.
@@ -142,13 +75,9 @@ I tilted my candle to the floor, and discovered. . . a potato peel.
 As though having a second dinner, everyone gathered around the table downstairs. I announced I'd determined who'd stolen the scarecrow's mask.
     
     """
-
+    suspects=["Charles Kincaid", "Chester", "Mrs. Winfrey", "Mr. Winfrey"]
     # Example prompt
-    prompt = create_basic_cot_prompt(
-        suspects=["Charles Kincaid", "Chester", "Mrs. Winfrey", "Mr. Winfrey"],
-        mystery_text=mystery_text
-    )    
-    # Run inference
-    result = run_inference(pipe, prompt)
-    print(f"Output: {result}")
+    full_response, predicted_suspect = model.run_inference(mystery_text, suspects)
+    print(f"Output: {full_response}")
+    print(f"Predicted suspect: {predicted_suspect}")
     

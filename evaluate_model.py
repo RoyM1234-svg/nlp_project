@@ -64,7 +64,7 @@ def main():
     parser.add_argument('--model_path', type=str, default="saved_mistralai_model", help='Path to the saved model directory')
     args = parser.parse_args()
 
-    model = DetectiveModel(args.model_path, is_quantized=True, max_new_tokens=100, temperature=0.7)
+    model = DetectiveModel(args.model_path, is_quantized=True, max_new_tokens=500, temperature=0.7)
     csv_path = "data/detective-puzzles.csv"
     print(f"Loading dataset from {csv_path} ...")
     df = load_detective_puzzles_dataset(csv_path)
