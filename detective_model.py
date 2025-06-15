@@ -3,6 +3,21 @@ from transformers.utils.quantization_config import BitsAndBytesConfig
 from transformers.pipelines import pipeline
 import torch
 import re
+from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
+
+class DetectiveStoppingCriteria(StoppingCriteria):
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+        
+    def __call__(self, input_ids, scores, **kwargs):
+        # Check last 30 tokens for complete ==X== pattern
+        text = self.tokenizer.decode(input_ids[0, -30:], skip_special_tokens=True)
+        
+        # Stop immediately when we see ==something==
+        if re.search(r'==[^=]+==', text):
+            return True
+        return False
+
 
 class DetectiveModel:
     def __init__(self, model_path, is_quantized=True, max_new_tokens=2000, temperature=0.7):
@@ -34,12 +49,14 @@ class DetectiveModel:
                 device_map="auto"
             )
 
+        stopping_criteria = StoppingCriteriaList([DetectiveStoppingCriteria(self.tokenizer)])
         self.generator = pipeline(
             "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
             torch_dtype=torch.float16,
-            device_map="auto"
+            device_map="auto",
+            stopping_criteria=stopping_criteria
         )
 
     def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
@@ -73,7 +90,7 @@ class DetectiveModel:
         {suspects_list}
 
         Based on the evidence in the story, who is the guilty suspect? First, explain your chain of thought. Then, to conclude your entire response, state the final answer formatted exactly like this: ==guilty suspect's name==
-        For example, if you believe the guilty suspect is John Smith, your response must end with: ==John Smith==
+        The guilty suspect's name must be one of the options provided in the suspect list. For example, if you believe the guilty suspect is John Smith, your response must end with: ==John Smith==
         """
         
         return prompt
