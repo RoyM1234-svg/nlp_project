@@ -13,15 +13,14 @@ class DetectiveModel:
 
     def load_model(self):
         if self.is_quantized:
-            # Load your saved model WITH 8-bit quantization
+            
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path,  # Your saved model directory
-                load_in_8bit=True,  # Apply quantization during loading
+                self.model_path, 
+                load_in_8bit=True, 
                 device_map="auto",
                 trust_remote_code=True,
             )
         else:
-            # Load without quantization
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_path,
                 torch_dtype=torch.float16,
@@ -51,7 +50,7 @@ class DetectiveModel:
         return full_response, predicted_suspect
     
     def run_inference_batch(self, mystery_texts: list[str], suspects_lists: list[list[str]]) -> list[tuple[str, str]]:
-
+        pass
 
     # Private methods
     def _create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
