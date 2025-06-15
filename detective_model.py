@@ -61,8 +61,8 @@ class DetectiveModel:
         )
 
     def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
-        stopping_criteria = StoppingCriteriaList([DetectiveStoppingCriteria(self.tokenizer)])
         prompt = self._create_prompt(mystery_text, suspects)
+        stopping_criteria = StoppingCriteriaList([DetectiveStoppingCriteria(self.tokenizer, len(prompt))])
         outputs = self.generator(
             prompt,
             max_new_tokens=self.max_new_tokens,
