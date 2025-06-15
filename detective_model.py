@@ -8,6 +8,7 @@ class DetectiveModel:
         self.is_quantized = is_quantized
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
+        self.load_model()
 
     def load_model(self):
         generator = pipeline(
