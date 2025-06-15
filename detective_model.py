@@ -49,17 +49,17 @@ class DetectiveModel:
                 device_map="auto"
             )
 
-        stopping_criteria = StoppingCriteriaList([DetectiveStoppingCriteria(self.tokenizer)])
         self.generator = pipeline(
             "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
             torch_dtype=torch.float16,
             device_map="auto",
-            stopping_criteria=stopping_criteria
+            
         )
 
     def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
+        stopping_criteria = StoppingCriteriaList([DetectiveStoppingCriteria(self.tokenizer)])
         prompt = self._create_prompt(mystery_text, suspects)
         outputs = self.generator(
             prompt,
@@ -67,7 +67,8 @@ class DetectiveModel:
             do_sample=True,
             temperature=self.temperature, 
             top_p=0.9, # only the top 90% of tokens are considered
-            return_full_text=False # deletes the [INST] tags
+            return_full_text=False, # deletes the [INST] tags
+            stopping_criteria=stopping_criteria
         )
         full_response = outputs[0]['generated_text']
         predicted_suspect = self._extract_guilty_suspect(full_response)
