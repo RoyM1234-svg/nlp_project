@@ -1,4 +1,5 @@
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.utils.quantization_config import BitsAndBytesConfig
 from transformers.pipelines import pipeline
 import torch
 import re
@@ -12,13 +13,19 @@ class DetectiveModel:
         self.load_model()
 
     def load_model(self):
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+
+        bnb_config = BitsAndBytesConfig(
+                load_in_8bit=True,
+                bnb_8bit_compute_dtype=torch.float16,  # Standard choice for GPUs
+            )
+        
         if self.is_quantized:
-            
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path, 
-                load_in_8bit=True, 
+                self.model_path,
+                quantization_config=bnb_config,
                 device_map="auto",
-                trust_remote_code=True,
             )
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
@@ -30,6 +37,7 @@ class DetectiveModel:
         self.generator = pipeline(
             "text-generation",
             model=self.model,
+            tokenizer=self.tokenizer,
             torch_dtype=torch.float16,
             device_map="auto"
         )
@@ -40,7 +48,7 @@ class DetectiveModel:
             prompt,
             max_new_tokens=self.max_new_tokens,
             do_sample=True,
-            temperature=self.temperature, #randomness
+            temperature=self.temperature, 
             top_p=0.9, # only the top 90% of tokens are considered
             return_full_text=False # deletes the [INST] tags
         )
