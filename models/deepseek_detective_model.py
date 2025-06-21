@@ -1,5 +1,6 @@
 import re
-from models.detective_model import DetectiveModel, DetectiveStoppingCriteria
+from models.detective_model import DetectiveModel
+from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 
 class DeepSeekDetectiveModel(DetectiveModel):
     def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:

@@ -1,3 +1,4 @@
+from typing import Optional
 import pandas as pd
 from tqdm import tqdm
 import argparse
@@ -19,7 +20,7 @@ def calculate_accuracy(predictions, true_labels):
     return accuracy
 
 
-def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: int, batch_size: int):
+def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int):
     df = pd.read_csv(csv_path)
     if num_samples:
         df = df.sample(num_samples)
