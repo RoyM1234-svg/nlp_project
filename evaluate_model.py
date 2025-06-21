@@ -3,7 +3,10 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 import argparse
-from models.detective_model import DetectiveModel, LLamaDetectiveModel, DeepSeekDetectiveModel, Gemma3DetectiveModel
+from models.detective_model import DetectiveModel
+from models.LLamaDetectiveModel import LLamaDetectiveModel
+from models.DeepSeekDetectiveModel import DeepSeekDetectiveModel
+from models.Gemma3DetectiveModel import Gemma3DetectiveModel
 
 
 def load_detective_puzzles_dataset(csv_path):
