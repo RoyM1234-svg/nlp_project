@@ -11,7 +11,7 @@ class Gemma3DetectiveModel(DetectiveModel):
         self,
         is_quantized: bool = True,
         max_new_tokens: int = 2000,
-        temperature: float = 0.7,
+        temperature: float = 0.3,
         top_p: float = 0.95,
         stopping_criteria: StoppingCriteria = None,
     ):

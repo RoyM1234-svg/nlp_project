@@ -48,7 +48,7 @@ class DeepSeekR1DistillQwen1_5BDetectiveModel(DetectiveModel):
         self,
         is_quantized: bool = True,
         max_new_tokens: int = 2000,
-        temperature: float = 1.0,
+        temperature: float = 0.7,
         top_p: float = 0.9,
         stopping_criteria: StoppingCriteria = None,
     ):
