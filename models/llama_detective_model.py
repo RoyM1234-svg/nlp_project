@@ -57,7 +57,7 @@ class LLamaDetectiveModel(DetectiveModel):
                 return result.strip()
         return "Unknown"
 
-class DetectiveStoppingCriteria(StoppingCriteria):
+class LLamaDetectiveStoppingCriteria(StoppingCriteria):
     def __init__(self, tokenizer, prompt_length: int):
         self.tokenizer = tokenizer
         self.prompt_length = prompt_length

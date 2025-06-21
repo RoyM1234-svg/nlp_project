@@ -2,6 +2,7 @@ import re
 from models.detective_model import DetectiveModel
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 
+
 class DeepSeekDetectiveModel(DetectiveModel):
     def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
@@ -49,7 +50,7 @@ class DeepSeekR1DistillQwen1_5BDetectiveModel(DetectiveModel):
         max_new_tokens: int = 2000,
         temperature: float = 1.0,
         top_p: float = 0.9,
-        stopping_criteria: DetectiveStoppingCriteria = None,
+        stopping_criteria: StoppingCriteria = None,
     ):
         super().__init__(
             model_path="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",

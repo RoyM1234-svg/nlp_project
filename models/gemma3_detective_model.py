@@ -1,5 +1,6 @@
 import re
-from models.detective_model import DetectiveModel, DetectiveStoppingCriteria
+from models.detective_model import DetectiveModel
+from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 
 
 class Gemma3DetectiveModel(DetectiveModel):
@@ -12,7 +13,7 @@ class Gemma3DetectiveModel(DetectiveModel):
         max_new_tokens: int = 2000,
         temperature: float = 0.7,
         top_p: float = 0.95,
-        stopping_criteria: DetectiveStoppingCriteria = None,
+        stopping_criteria: StoppingCriteria = None,
     ):
         super().__init__(
             model_path="google/gemma-3-1b-it",
