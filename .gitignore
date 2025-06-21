@@ -198,3 +198,4 @@ env.txt
 saved_llama_model/
 instruct.py
 .idea
+.DS_Store
