@@ -1,11 +1,7 @@
 from abc import ABC, abstractmethod
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.utils.quantization_config import BitsAndBytesConfig
-from transformers.pipelines import pipeline
 import torch
-import re
-from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
-import json
 
 class DetectiveModel(ABC):
     def __init__(self,
@@ -80,7 +76,6 @@ class DetectiveModel(ABC):
     def get_tokenizer(self) -> AutoTokenizer:
         return self.tokenizer
         
-    # Private methods
     @abstractmethod
     def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
         """Create a prompt for the model based on the mystery and suspects.
@@ -108,18 +103,4 @@ class DetectiveModel(ABC):
         pass
 
 
-class DetectiveStoppingCriteria(StoppingCriteria):
-    def __init__(self, tokenizer, prompt_length: int):
-        self.tokenizer = tokenizer
-        self.prompt_length = prompt_length
-        
-    def __call__(self, input_ids, scores, **kwargs):
-        if input_ids.shape[1] <= self.prompt_length:
-            return False
-        # Check last 30 tokens for complete ==X== pattern
-        text = self.tokenizer.decode(input_ids[0, -30:], skip_special_tokens=True)
-        
-        # Stop immediately when we see ==something==
-        if re.search(r'==[^=]+==', text):
-            return True
-        return False
+

@@ -1,5 +1,6 @@
 
 import re
+from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 from models.detective_model import DetectiveModel
 
 
@@ -55,3 +56,19 @@ class LLamaDetectiveModel(DetectiveModel):
                 result = match[0] if match[0] else match[1]
                 return result.strip()
         return "Unknown"
+
+class DetectiveStoppingCriteria(StoppingCriteria):
+    def __init__(self, tokenizer, prompt_length: int):
+        self.tokenizer = tokenizer
+        self.prompt_length = prompt_length
+        
+    def __call__(self, input_ids, scores, **kwargs):
+        if input_ids.shape[1] <= self.prompt_length:
+            return False
+        # Check last 30 tokens for complete ==X== pattern
+        text = self.tokenizer.decode(input_ids[0, -30:], skip_special_tokens=True)
+        
+        # Stop immediately when we see ==something==
+        if re.search(r'==[^=]+==', text):
+            return True
+        return False
