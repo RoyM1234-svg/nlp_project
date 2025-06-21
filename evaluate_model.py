@@ -3,7 +3,10 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 import argparse
-from models.detective_model import DetectiveModel, LLamaDetectiveModel
+from models.detective_model import DetectiveModel
+from models.LLamaDetectiveModel import LLamaDetectiveModel
+from models.DeepSeekDetectiveModel import DeepSeekDetectiveModel
+from models.Gemma3DetectiveModel import Gemma3DetectiveModel
 
 
 def load_detective_puzzles_dataset(csv_path):
@@ -61,9 +64,19 @@ def main():
     parser = argparse.ArgumentParser(description='Evaluate model on detective puzzles dataset.')
     parser.add_argument('--num_samples', type=int, default=None, help='Number of samples to evaluate on. If not provided, evaluate on all samples.')
     parser.add_argument('--model_path', type=str, default="saved_mistralai_model", help='Path to the saved model directory')
+    parser.add_argument('--model_type', type=str, default="llama", choices=["llama", "deepseek", "gemma3"], help='Type of model to use: llama/ deepseek/ gemma3')
     args = parser.parse_args()
 
-    model = LLamaDetectiveModel(args.model_path, is_quantized=True)
+    # Create the appropriate model based on the model_type argument
+    if args.model_type == "llama":
+        model = LLamaDetectiveModel(args.model_path, is_quantized=True)
+    elif args.model_type == "deepseek":
+        model = DeepSeekDetectiveModel(args.model_path)
+    elif args.model_type == "gemma3":
+        model = Gemma3DetectiveModel(is_quantized=False)
+    else:
+        raise ValueError(f"Unsupported model type: {args.model_type}")
+    
     csv_path = "data/detective-puzzles.csv"
     print(f"Loading dataset from {csv_path} ...")
     df = load_detective_puzzles_dataset(csv_path)
@@ -72,7 +85,7 @@ def main():
         df = df.head(args.num_samples)
         print(f"Evaluating on {args.num_samples} samples.")
     
-    print("Evaluating model...")
+    print(f"Evaluating model (type: {args.model_type})...")
     metrics = evaluate_model(model, df)
     
     print("\nEvaluation Results:")
