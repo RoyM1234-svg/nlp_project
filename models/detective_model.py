@@ -7,7 +7,6 @@ import re
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 import json
 
-
 class DetectiveModel(ABC):
     def __init__(self,
                  model_path,
@@ -23,56 +22,63 @@ class DetectiveModel(ABC):
         self.temperature = temperature
         self.top_p = top_p
         self.stopping_criteria = stopping_criteria
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model()
 
     def load_model(self):        
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+        self.tokenizer.padding_side = "left"
 
-        bnb_config = BitsAndBytesConfig(
-                load_in_8bit=True,
-                bnb_8bit_compute_dtype=torch.float16,  # Standard choice for GPUs
-            )
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+
+        model_kwargs = {
+                "device_map": "auto",
+                "torch_dtype": torch.float16,
+        }
         
         if self.is_quantized:
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path,
-                quantization_config=bnb_config,
-                device_map="auto",
-            )
-        else:
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path,
-                torch_dtype=torch.float16,
-                device_map="auto"
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_8bit=True,
+                bnb_8bit_compute_dtype=torch.float16,
             )
 
-        self.generator = pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            torch_dtype=torch.float16,
-            device_map="auto",
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_path,
+            **model_kwargs
         )
+        self.model.eval()
 
-    def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
-        prompt = self.create_prompt(mystery_text, suspects)
-       
-        outputs = self.generator(
-            prompt,
+    @torch.no_grad()
+    def generate_batch(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> tuple[list[str], list[str]]:
+        """Generate text for a batch of tokenized inputs."""
+        input_ids = input_ids.to(self.device)
+        attention_mask = attention_mask.to(self.device)
+
+        outputs = self.model.generate(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
             max_new_tokens=self.max_new_tokens,
+            temperature=self.temperature,
             do_sample=True,
-            temperature=self.temperature, 
-            top_p=self.top_p, # only the top 90% of tokens are considered
-            return_full_text=False, # deletes the [INST] tags
-            stopping_criteria=self.stopping_criteria
+            top_p=self.top_p,
+            pad_token_id=self.tokenizer.pad_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
         )
-        full_response = outputs[0]['generated_text']
-        predicted_suspect = self.extract_guilty_suspect(full_response)
+
+        prompt_length = input_ids.shape[1]
+        generated_ids = outputs[:, prompt_length:]
+        generated_texts = self.tokenizer.batch_decode(
+            generated_ids,
+            skip_special_tokens=True
+        )
+
+        predicted_suspects = [self.extract_guilty_suspect(text) for text in generated_texts]
         
-        return full_response, predicted_suspect
+        return generated_texts, predicted_suspects
     
-    def run_inference_batch(self, mystery_texts: list[str], suspects_lists: list[list[str]]) -> list[tuple[str, str]]:
-        pass
+    def get_tokenizer(self) -> AutoTokenizer:
+        return self.tokenizer
         
     # Private methods
     @abstractmethod
@@ -100,7 +106,7 @@ class DetectiveModel(ABC):
             The guilty suspect name
         """
         pass
-    
+
 
 class DetectiveStoppingCriteria(StoppingCriteria):
     def __init__(self, tokenizer, prompt_length: int):
@@ -117,4 +123,3 @@ class DetectiveStoppingCriteria(StoppingCriteria):
         if re.search(r'==[^=]+==', text):
             return True
         return False
-    
