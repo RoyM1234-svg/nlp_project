@@ -14,13 +14,15 @@ class DetectiveModel(ABC):
                  is_quantized=True,
                  max_new_tokens=2000,
                  temperature=0.7,
-                 use_stopping_criteria=False,
+                 top_p=0.9,
+                 stopping_criteria=None,
                 ):
         self.model_path = model_path
         self.is_quantized = is_quantized
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
-        self.use_stopping_criteria = use_stopping_criteria
+        self.top_p = top_p
+        self.stopping_criteria = stopping_criteria
         self.load_model()
 
     def load_model(self):        
@@ -54,18 +56,15 @@ class DetectiveModel(ABC):
 
     def run_inference(self, mystery_text: str, suspects: list[str]) -> tuple[str, str]:
         prompt = self.create_prompt(mystery_text, suspects)
-        if self.use_stopping_criteria:
-            stopping_criteria = StoppingCriteriaList([DetectiveStoppingCriteria(self.tokenizer, len(prompt))])
-        else:
-            stopping_criteria = None
+       
         outputs = self.generator(
             prompt,
             max_new_tokens=self.max_new_tokens,
             do_sample=True,
             temperature=self.temperature, 
-            top_p=0.9, # only the top 90% of tokens are considered
+            top_p=self.top_p, # only the top 90% of tokens are considered
             return_full_text=False, # deletes the [INST] tags
-            stopping_criteria=stopping_criteria
+            stopping_criteria=self.stopping_criteria
         )
         full_response = outputs[0]['generated_text']
         predicted_suspect = self.extract_guilty_suspect(full_response)
@@ -109,9 +108,10 @@ class LLamaDetectiveModel(DetectiveModel):
                  is_quantized=True,
                  max_new_tokens=2000,
                  temperature=0.7,
-                 use_stopping_criteria=False,
+                 top_p=0.9,
+                 stopping_criteria=None,
                 ):
-        super().__init__(model_path, is_quantized, max_new_tokens, temperature, use_stopping_criteria)
+        super().__init__(model_path, is_quantized, max_new_tokens, temperature,top_p,stopping_criteria)
 
     def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
@@ -219,14 +219,16 @@ class DeepSeekR1DistillQwen1_5BDetectiveModel(DetectiveModel):
         is_quantized: bool = True,
         max_new_tokens: int = 2000,
         temperature: float = 1.0,
-        use_stopping_criteria: bool = False,
+        top_p: float = 0.9,
+        stopping_criteria: DetectiveStoppingCriteria = None,
     ):
         super().__init__(
             model_path="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
             is_quantized=is_quantized,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
-            use_stopping_criteria=use_stopping_criteria,
+            top_p=top_p,
+            stopping_criteria=stopping_criteria,
         )
 
 #     def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
@@ -299,5 +301,66 @@ Instructions:
                 result = match[0] if match[0] else match[1]
                 return result.strip()
         return "Unknown"
+
+class Gemma3DetectiveModel(DetectiveModel):
+    """
+    Detective model using Google's Gemma 3 1B IT model from Hugging Face.
+    """
+    def __init__(
+        self,
+        is_quantized: bool = True,
+        max_new_tokens: int = 2000,
+        temperature: float = 0.7,
+        top_p: float = 0.95,
+        stopping_criteria: DetectiveStoppingCriteria = None,
+    ):
+        super().__init__(
+            model_path="google/gemma-3-1b-it",
+            is_quantized=is_quantized,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stopping_criteria=stopping_criteria,
+        )
+
+    def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
+        """This model has a small context- up to 32768 tokens"""
+        suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
+        
+        system_prompt = "You are a world-class detective. Your job is to analyze a mystery story and find the guilty person."
+        
+        user_prompt = (
+        f"Read the following story and decide who is guilty.\n\n"
+        f"Mystery:\n{mystery_text.strip()}\n\n"
+        f"Suspects:\n{suspects_list}\n\n"
+        f"Please follow this exact format:\n\n"
+        f"Analysis:\n"
+        f"[Analyze the evidence and clues from the story]\n\n"
+        f"Reasoning:\n"
+        f"[Explain your logic for each suspect]\n\n"
+        f"GUILTY: [name from the suspect list above]\n\n"
+        f"IMPORTANT: The GUILTY statement must be the absolute last line of your response."
+        )
+       
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        prompt = self.tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=False
+        )
+
+        return prompt
     
+    @staticmethod
+    def extract_guilty_suspect(full_response: str) -> str:
+        pattern = r'\*{0,2}\s*GUILTY:\s*\*{0,2}\s*\[?([^\]\n*]+)\]?\*{0,2}'
+        matches = re.findall(pattern, full_response, re.IGNORECASE)
+        if matches:
+            result = matches[-1].strip()  
+            return result
+        return "Unknown"
     
