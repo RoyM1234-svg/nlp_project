@@ -1,8 +1,5 @@
 from torch.utils.data import Dataset
 from typing import List
-from models.detective_model import DetectiveModel
-import pandas as pd
-from torch.utils.data import DataLoader
 
 class DetectiveDataset(Dataset):
     """PyTorch Dataset for detective puzzles."""
