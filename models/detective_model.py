@@ -103,4 +103,53 @@ class DetectiveModel(ABC):
         pass
 
 
+    # --- Generate k samples ---
+    @torch.no_grad()
+    def generate_k_samples(self, mystery_text: str, suspects: list[str], k: int) -> list[tuple[str, str]]:
+        """
+        Generates k different outputs for a SINGLE prompt in one efficient call.
+
+        Args:
+            mystery_text: The mystery story text.
+            suspects: List of suspect names.
+            k: The number of different outputs to generate.
+
+        Returns:
+            A list of k (full_response, predicted_suspect) tuples.
+        """
+        prompt = self.create_prompt(mystery_text, suspects)
+        
+        # Tokenize the single prompt
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+
+        # Generate k sequences from the single prompt
+        outputs = self.model.generate(
+            **inputs,
+            max_new_tokens=self.max_new_tokens,
+            temperature=self.temperature,
+            do_sample=True,
+            top_p=self.top_p,
+            pad_token_id=self.tokenizer.pad_token_id,
+            # --- THE KEY PARAMETERS ---
+            num_return_sequences=k,
+        )
+
+        # Decode all k outputs at once
+        # We need to slice the output to remove the prompt part
+        prompt_length = inputs.input_ids.shape[1]
+        generated_ids = outputs[:, prompt_length:]
+        generated_texts = self.tokenizer.batch_decode(
+            generated_ids,
+            skip_special_tokens=True
+        )
+
+        # Extract suspects from each of the k generated texts
+        results = []
+        for text in generated_texts:
+            predicted_suspect = self.extract_guilty_suspect(text)
+            results.append((text, predicted_suspect))
+            
+        return results
+    
+
 
