@@ -21,8 +21,9 @@ class DetectiveDataLoader(DataLoader):
                          for opts in df['answer_options']]
         true_labels = [DetectiveDataLoader.parse_true_label(label) 
                       for label in df['answer']]
-        
-        return DetectiveDataset(mystery_texts, suspects_lists, true_labels)
+        answer_options_strs = df['answer_options'].tolist()
+
+        return DetectiveDataset(mystery_texts, suspects_lists, true_labels, answer_options_strs)
     
 
     @staticmethod
@@ -51,6 +52,7 @@ class DetectiveDataLoader(DataLoader):
             suspects_lists = [item['suspects'] for item in batch]
             true_labels = [item['true_label'] for item in batch]
             indices = [item['index'] for item in batch]
+            answer_options_strs = [item['answer_options_str'] for item in batch]
             
             prompts = [model.create_prompt(mystery, suspects) 
                     for mystery, suspects in zip(mystery_texts, suspects_lists)]
@@ -66,6 +68,8 @@ class DetectiveDataLoader(DataLoader):
                 'inputs': inputs,
                 'true_labels': true_labels,
                 'indices': indices,
+                'mystery_texts': mystery_texts,
+                'answer_options': answer_options_strs,
             }
         
         return collate
