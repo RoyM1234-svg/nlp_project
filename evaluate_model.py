@@ -70,7 +70,7 @@ def main():
     if args.model_type == "llama":
         model = LLamaDetectiveModel(args.model_path, is_quantized=True)
     elif args.model_type == "deepseek":
-        model = DeepSeekR1DistillQwen1_5BDetectiveModel(args.model_path)
+        model = DeepSeekR1DistillQwen1_5BDetectiveModel()
     elif args.model_type == "gemma3":
         model = Gemma3DetectiveModel(is_quantized=False)
     else:
