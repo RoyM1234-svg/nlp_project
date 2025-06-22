@@ -46,7 +46,7 @@ class DetectiveModel(ABC):
         self.model.eval()
 
     @torch.no_grad()
-    def generate_batch(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> tuple[list[str], list[str]]:
+    def generate_batch(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, k: int) -> tuple[list[str], list[str]]:
         """Generate text for a batch of tokenized inputs."""
         input_ids = input_ids.to(self.device)
         attention_mask = attention_mask.to(self.device)
@@ -60,6 +60,7 @@ class DetectiveModel(ABC):
             top_p=self.top_p,
             pad_token_id=self.tokenizer.pad_token_id,
             eos_token_id=self.tokenizer.eos_token_id,
+            num_return_sequences=k,
         )
 
         prompt_length = input_ids.shape[1]
