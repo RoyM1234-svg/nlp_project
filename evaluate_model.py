@@ -93,9 +93,9 @@ def evaluate_model_for_self_consistency(model: DetectiveModel, csv_path: str, nu
                     'sample_index': j + 1,  # e.g., 1, 2, 3... up to k
                     'mystery_text': batch['mystery_texts'][i],     # Requires change in DataLoader
                     'answer_options': batch['answer_options'][i], # Requires change in DataLoader
-                    'true_answer': batch['true_labels'][i],
-                    'model_prediction': all_predictions[flat_index],
-                    'full_response': all_full_responses[flat_index]
+                    'true_labels': batch['true_labels'][i],
+                    'predictions': all_predictions[flat_index],
+                    'generated_cots': all_full_responses[flat_index]
                 }
                 all_samples_log.append(sample_row)
 
@@ -105,8 +105,8 @@ def evaluate_model_for_self_consistency(model: DetectiveModel, csv_path: str, nu
     
     # Reorder columns to match your exact specification
     final_columns = [
-        'puzzle_id', 'sample_index', 'mystery_text', 
-        'answer_options', 'true_answer', 'model_prediction', 'full_response'
+        'puzzle_id', 'sample_index', 'mystery_text',
+        'answer_options', 'true_labels', 'predictions', 'generated_cots'
     ]
     results_df = results_df[final_columns]
     
