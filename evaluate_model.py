@@ -5,7 +5,7 @@ import argparse
 from sklearn.metrics import accuracy_score
 from models.detective_model import DetectiveModel
 from models.llama_detective_model import LLamaDetectiveModel
-from models.deepseek_detective_model import DeepSeekDetectiveModel
+from models.deepseek_detective_model import DeepSeekR1DistillQwen1_5BDetectiveModel
 from models.gemma3_detective_model import Gemma3DetectiveModel
 from data_loaders.detective_data_loader import DetectiveDataLoader
 
@@ -70,7 +70,7 @@ def main():
     if args.model_type == "llama":
         model = LLamaDetectiveModel(args.model_path, is_quantized=True)
     elif args.model_type == "deepseek":
-        model = DeepSeekDetectiveModel(args.model_path)
+        model = DeepSeekR1DistillQwen1_5BDetectiveModel(args.model_path)
     elif args.model_type == "gemma3":
         model = Gemma3DetectiveModel(is_quantized=False)
     else:

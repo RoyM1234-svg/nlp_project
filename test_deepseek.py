@@ -58,7 +58,7 @@ def evaluate_model(model: DetectiveModel, df: pd.DataFrame):
     
 
 if __name__ == "__main__":
-    # csv_path = "detective-puzzles.csv"
+    # csv_path = "data/detective-puzzles.csv"
     # df = pd.read_csv(csv_path)
 
     # model = DeepSeekR1DistillQwen1_5BDetectiveModel()
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
-    csv_path = "detective-puzzles.csv"
+    csv_path = "data/detective-puzzles.csv"
     df = load_detective_puzzles_dataset(csv_path)
     
     if args.num_samples is not None:
