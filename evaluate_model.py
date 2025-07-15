@@ -20,23 +20,43 @@ def calculate_accuracy(predictions, true_labels):
     return accuracy
 
 
-def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int, k: int):
+def evaluate_model(cot_model: DetectiveModel, final_answer_model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int, k: int):
     df = pd.read_csv(csv_path)
     if num_samples:
         df = df.sample(num_samples)
-    data_loader = DetectiveDataLoader(model, df, batch_size=batch_size, shuffle=False)
+    data_loader = DetectiveDataLoader(df, batch_size=batch_size, shuffle=False)
 
     results = []
 
     for batch in tqdm(data_loader, desc="Generating batch"):
-        print(batch['inputs']['input_ids'].shape)
-        input_ids = batch['inputs']['input_ids']
-        attention_mask = batch['inputs']['attention_mask']
-        generated_cots, predictions = model.generate_batch(input_ids, attention_mask, k=k)
-        for i in range(len(predictions)):
+        prompts = [cot_model.create_prompt_for_cot(mystery, suspects)
+                    for mystery, suspects in zip(batch['mystery_texts'], batch['suspects'])]
+            
+        inputs = cot_model.tokenizer(
+                prompts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+            )
+        
+        generated_cots = cot_model.generate_batch(inputs['input_ids'], inputs['attention_mask'], k=k)
+
+        prompts = [final_answer_model.create_prompt_for_final_answer(mystery, suspects, cot)
+                            for mystery, suspects, cot in zip(batch['mystery_texts'], batch['suspects'], generated_cots)]
+        
+        inputs = final_answer_model.tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        )
+        
+        final_answers = final_answer_model.generate_batch(inputs['input_ids'], inputs['attention_mask'], k=k)
+        
+        for i in range(len(final_answers)):
             results.append({
                 'generated_cots': generated_cots[i],
-                'predictions': predictions[i],
+                'predictions': final_answers[i],
                 'true_labels': batch['true_labels'][i],
                 'indices': batch['indices'][i],
             })
@@ -47,10 +67,10 @@ def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[i
     print(f"Results saved to results.csv")
     
     # Calculate and display accuracy
-    predictions = [result['predictions'] for result in results]
+    final_answers = [result['predictions'] for result in results]
     true_labels = [result['true_labels'] for result in results]
     
-    accuracy = calculate_accuracy(predictions, true_labels)
+    accuracy = calculate_accuracy(final_answers, true_labels)
     
     print(f"\nAccuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
     
@@ -65,7 +85,7 @@ def evaluate_model_for_self_consistency(model: DetectiveModel, csv_path: str, nu
     if num_samples:
         df = df.sample(num_samples)
     
-    data_loader = DetectiveDataLoader(model, df, batch_size=batch_size, shuffle=False)
+    data_loader = DetectiveDataLoader(df, batch_size=batch_size, shuffle=False)
 
     all_samples_log = []
 
@@ -118,7 +138,7 @@ def evaluate_model_for_self_consistency(model: DetectiveModel, csv_path: str, nu
 def main():
     parser = argparse.ArgumentParser(description='Evaluate model on detective puzzles dataset.')
     parser.add_argument('--num_samples', type=int, default=None, help='Number of samples to evaluate on. If not provided, evaluate on all samples.')
-    parser.add_argument('--model_path', type=str, default="saved_llama_model", help='Path to the saved model directory')
+    # parser.add_argument('--model_path', type=str, default="saved_llama_model", help='Path to the saved model directory')
     parser.add_argument('--model_type', type=str, default="llama", choices=["llama", "deepseek", "gemma3"], help='Type of model to use: llama/ deepseek/ gemma3')
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--csv_path", type=str, default="data/detective-puzzles.csv")
@@ -127,16 +147,18 @@ def main():
 
     # Create the appropriate model based on the model_type argument
     if args.model_type == "llama":
-        model = LLamaDetectiveModel(args.model_path, is_quantized=True)
-    elif args.model_type == "deepseek":
-        model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
-    elif args.model_type == "gemma3":
-        model = Gemma3DetectiveModel(is_quantized=False)
+        cot_model = LLamaDetectiveModel(is_quantized=True)
+        final_answer_model = LLamaDetectiveModel(is_quantized=True, temperature=0.1, top_p=0.5, max_new_tokens=1)
+    # elif args.model_type == "deepseek":
+    #     model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
+    # elif args.model_type == "gemma3":
+    #     model = Gemma3DetectiveModel(is_quantized=False)
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
     
-    # evaluate_model(model, args.csv_path, args.num_samples, args.batch_size, args.k)
-    evaluate_model_for_self_consistency(model, args.csv_path, args.num_samples, args.batch_size, args.k)
+    evaluate_model(cot_model, final_answer_model, args.csv_path, args.num_samples, args.batch_size, args.k)
+    
+    # evaluate_model_for_self_consistency(cot_model, final_answer_model, args.csv_path, args.num_samples, args.batch_size, args.k)
     
     
 

@@ -24,7 +24,7 @@ class Gemma3DetectiveModel(DetectiveModel):
             stopping_criteria=stopping_criteria,
         )
 
-    def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
+    def create_prompt_for_cot(self, mystery_text: str, suspects: list[str]) -> str:
         """This model has a small context- up to 32768 tokens"""
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
         

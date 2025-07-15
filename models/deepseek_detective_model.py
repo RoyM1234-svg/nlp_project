@@ -24,7 +24,7 @@ class DeepSeekR1DistillQwen1_5BDetectiveModel(DetectiveModel):
         )
 
 
-    def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
+    def create_prompt_for_cot(self, mystery_text: str, suspects: list[str]) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
         
         prompt = f"""<｜User｜>

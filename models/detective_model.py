@@ -11,6 +11,7 @@ class DetectiveModel(ABC):
                  temperature=0.7,
                  top_p=0.9,
                  stopping_criteria=None,
+                 task: str = "cot"
                 ):
         self.model_path = model_path
         self.is_quantized = is_quantized
@@ -20,6 +21,7 @@ class DetectiveModel(ABC):
         self.stopping_criteria = stopping_criteria
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model()
+        self.task = task
 
     def load_model(self):        
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
@@ -46,7 +48,7 @@ class DetectiveModel(ABC):
         self.model.eval()
 
     @torch.no_grad()
-    def generate_batch(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, k: int) -> tuple[list[str], list[str]]:
+    def generate_batch(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, k: int) -> list[str]:
         """Generate text for a batch of tokenized inputs."""
         input_ids = input_ids.to(self.device)
         attention_mask = attention_mask.to(self.device)
@@ -65,20 +67,17 @@ class DetectiveModel(ABC):
 
         prompt_length = input_ids.shape[1]
         generated_ids = outputs[:, prompt_length:]
-        generated_texts = self.tokenizer.batch_decode(
+
+        return self.tokenizer.batch_decode(
             generated_ids,
             skip_special_tokens=True
         )
 
-        predicted_suspects = [self.extract_guilty_suspect(text) for text in generated_texts]
-        
-        return generated_texts, predicted_suspects
-    
     def get_tokenizer(self) -> AutoTokenizer:
         return self.tokenizer
         
     @abstractmethod
-    def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
+    def create_prompt_for_cot(self, mystery_text: str, suspects: list[str]) -> str:
         """Create a prompt for the model based on the mystery and suspects.
         
         Args:
@@ -88,6 +87,10 @@ class DetectiveModel(ABC):
         Returns:
             Formatted prompt string for the model
         """
+        pass
+
+    @abstractmethod
+    def create_prompt_for_final_answer(self, mystery_text: str, suspects: list[str], cot:str) -> str:
         pass
 
     @staticmethod
@@ -105,52 +108,52 @@ class DetectiveModel(ABC):
 
 
     # --- Generate k samples ---
-    @torch.no_grad()
-    def generate_k_samples(self, mystery_text: str, suspects: list[str], k: int) -> list[tuple[str, str]]:
-        """
-        Generates k different outputs for a SINGLE prompt in one efficient call.
-
-        Args:
-            mystery_text: The mystery story text.
-            suspects: List of suspect names.
-            k: The number of different outputs to generate.
-
-        Returns:
-            A list of k (full_response, predicted_suspect) tuples.
-        """
-        prompt = self.create_prompt(mystery_text, suspects)
-        
-        # Tokenize the single prompt
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-
-        # Generate k sequences from the single prompt
-        outputs = self.model.generate(
-            **inputs,
-            max_new_tokens=self.max_new_tokens,
-            temperature=self.temperature,
-            do_sample=True,
-            top_p=self.top_p,
-            pad_token_id=self.tokenizer.pad_token_id,
-            # --- THE KEY PARAMETERS ---
-            num_return_sequences=k,
-        )
-
-        # Decode all k outputs at once
-        # We need to slice the output to remove the prompt part
-        prompt_length = inputs.input_ids.shape[1]
-        generated_ids = outputs[:, prompt_length:]
-        generated_texts = self.tokenizer.batch_decode(
-            generated_ids,
-            skip_special_tokens=True
-        )
-
-        # Extract suspects from each of the k generated texts
-        results = []
-        for text in generated_texts:
-            predicted_suspect = self.extract_guilty_suspect(text)
-            results.append((text, predicted_suspect))
-            
-        return results
-    
+    # @torch.no_grad()
+    # def generate_k_samples(self, mystery_text: str, suspects: list[str], k: int) -> list[tuple[str, str]]:
+    #     """
+    #     Generates k different outputs for a SINGLE prompt in one efficient call.
+    #
+    #     Args:
+    #         mystery_text: The mystery story text.
+    #         suspects: List of suspect names.
+    #         k: The number of different outputs to generate.
+    #
+    #     Returns:
+    #         A list of k (full_response, predicted_suspect) tuples.
+    #     """
+    #     prompt = self.create_prompt_for_cot(mystery_text, suspects)
+    #
+    #     # Tokenize the single prompt
+    #     inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+    #
+    #     # Generate k sequences from the single prompt
+    #     outputs = self.model.generate(
+    #         **inputs,
+    #         max_new_tokens=self.max_new_tokens,
+    #         temperature=self.temperature,
+    #         do_sample=True,
+    #         top_p=self.top_p,
+    #         pad_token_id=self.tokenizer.pad_token_id,
+    #         # --- THE KEY PARAMETERS ---
+    #         num_return_sequences=k,
+    #     )
+    #
+    #     # Decode all k outputs at once
+    #     # We need to slice the output to remove the prompt part
+    #     prompt_length = inputs.input_ids.shape[1]
+    #     generated_ids = outputs[:, prompt_length:]
+    #     generated_texts = self.tokenizer.batch_decode(
+    #         generated_ids,
+    #         skip_special_tokens=True
+    #     )
+    #
+    #     # Extract suspects from each of the k generated texts
+    #     results = []
+    #     for text in generated_texts:
+    #         predicted_suspect = self.extract_guilty_suspect(text)
+    #         results.append((text, predicted_suspect))
+    #
+    #     return results
+    #
 
 

@@ -4,13 +4,13 @@ from torch.utils.data import DataLoader
 import pandas as pd
 
 class DetectiveDataLoader(DataLoader):
-    def __init__(self, model: DetectiveModel, df: pd.DataFrame, batch_size: int = 1, shuffle: bool = True):
+    def __init__(self, df: pd.DataFrame, batch_size: int = 1, shuffle: bool = True):
         dataset = self.create_dataset(df)
         
         super().__init__(dataset,
                          batch_size=batch_size,
                          shuffle=shuffle,
-                         collate_fn=self.collate_fn(model)
+                         collate_fn=self.collate_fn()
                         )
 
     @staticmethod
@@ -45,7 +45,7 @@ class DetectiveDataLoader(DataLoader):
 
     
     @staticmethod
-    def collate_fn(model: DetectiveModel):
+    def collate_fn():
         """Custom collate function that creates prompts and tokenizes them."""
         def collate(batch):
             mystery_texts = [item['mystery_text'] for item in batch]
@@ -54,22 +54,12 @@ class DetectiveDataLoader(DataLoader):
             indices = [item['index'] for item in batch]
             answer_options_strs = [item['answer_options_str'] for item in batch]
             
-            prompts = [model.create_prompt(mystery, suspects) 
-                    for mystery, suspects in zip(mystery_texts, suspects_lists)]
-            
-            inputs = model.tokenizer(
-                prompts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-            )
-            
             return {
-                'inputs': inputs,
                 'true_labels': true_labels,
                 'indices': indices,
                 'mystery_texts': mystery_texts,
                 'answer_options': answer_options_strs,
+                'suspects': suspects_lists,
             }
         
         return collate
