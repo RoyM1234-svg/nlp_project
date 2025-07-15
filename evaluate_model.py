@@ -138,7 +138,7 @@ def evaluate_model_for_self_consistency(model: DetectiveModel, csv_path: str, nu
 def main():
     parser = argparse.ArgumentParser(description='Evaluate model on detective puzzles dataset.')
     parser.add_argument('--num_samples', type=int, default=None, help='Number of samples to evaluate on. If not provided, evaluate on all samples.')
-    # parser.add_argument('--model_path', type=str, default="saved_llama_model", help='Path to the saved model directory')
+    parser.add_argument('--model_path', type=str, default="saved_llama_model", help='Path to the saved model directory')
     parser.add_argument('--model_type', type=str, default="llama", choices=["llama", "deepseek", "gemma3"], help='Type of model to use: llama/ deepseek/ gemma3')
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--csv_path", type=str, default="data/detective-puzzles.csv")
@@ -147,8 +147,8 @@ def main():
 
     # Create the appropriate model based on the model_type argument
     if args.model_type == "llama":
-        cot_model = LLamaDetectiveModel(is_quantized=True)
-        final_answer_model = LLamaDetectiveModel(is_quantized=True, temperature=0.1, top_p=0.5, max_new_tokens=1)
+        cot_model = LLamaDetectiveModel(args.model_path, is_quantized=True)
+        final_answer_model = LLamaDetectiveModel(args.model_path, is_quantized=True, temperature=0.1, top_p=0.5, max_new_tokens=1)
     # elif args.model_type == "deepseek":
     #     model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
     # elif args.model_type == "gemma3":

@@ -21,7 +21,7 @@ def create_prompt_template(system_prompt: str, user_prompt: str, tokenizer) -> s
 
 class LLamaDetectiveModel(DetectiveModel):
     def __init__(self,
-                 model_path= "meta-llama/Llama-3.1-8B-Instruct",
+                 model_path,
                  is_quantized=True,
                  max_new_tokens=2000,
                  temperature=0.7,
