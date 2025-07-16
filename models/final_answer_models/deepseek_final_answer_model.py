@@ -25,16 +25,14 @@ class DeepSeekFinalAnswerModel(DetectiveModel):
     def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
         
-        # Base instruction (exact from research, adapted for names)
+        # Base instruction (modified to ask for direct suspect name)
         instruction = """Your task is to solve a given mystery.
 The mystery is a detective puzzle presented as a short story.
 You will be given a list of suspects apart from the mystery content.
-Please give your final answer as
-GUILTY: [suspect name]
-where [suspect name] is the name of the guilty suspect.
+Please give your final answer as just the name of the guilty suspect.
 Only one suspect from the list is guilty, and your task is to identify which one."""
 
-        prompt = f"""<｜User｜>
+        prompt = f"""
 {instruction}
 
 Mystery Story:
@@ -46,7 +44,7 @@ Suspects:
 Solution:
 {cot}
 
-Final answer:
+Who is guilty?
 <｜Assistant｜>"""
 
         return prompt

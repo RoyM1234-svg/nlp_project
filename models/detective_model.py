@@ -70,6 +70,8 @@ class DetectiveModel(ABC):
         input_ids = inputs['input_ids'].to(self.device)
         attention_mask = inputs['attention_mask'].to(self.device)
 
+        print("batch shape: ", input_ids.shape)
+
         outputs = self.model.generate(
             input_ids=input_ids,
             attention_mask=attention_mask,

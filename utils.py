@@ -6,7 +6,7 @@ import re
 from typing import Optional
 
 
-def extract_suspect_name(response: str) -> str:
+def extract_guilty_suspect(response: str) -> str:
     """
     Extract the guilty suspect name from model response.
     

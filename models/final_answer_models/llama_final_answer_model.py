@@ -18,9 +18,7 @@ class LLamaFinalAnswerModel(DetectiveModel):
         instruction = """Your task is to solve a given mystery.
 The mystery is a detective puzzle presented as a short story.
 You will be given a list of suspects apart from the mystery content.
-Please give your final answer as
-GUILTY: [suspect name]
-where [suspect name] is the name of the guilty suspect.
+Please give your final answer as just the name of the guilty suspect.
 Only one suspect from the list is guilty, and your task is to identify which one."""
 
         user_prompt = f"""{instruction}
@@ -34,9 +32,9 @@ Suspects:
 Solution:
 {cot}
 
-Final answer:"""
+Who is guilty?"""
 
-        system_prompt = "You are an expert detective who provides final verdicts in a specific format."
+        system_prompt = "You are an expert detective who identifies the guilty suspect by name."
 
         messages = [
             {"role": "system", "content": system_prompt},

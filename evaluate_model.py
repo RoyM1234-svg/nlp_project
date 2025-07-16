@@ -7,6 +7,7 @@ from models.detective_model import DetectiveModel
 from models.cot_models import *
 from models.final_answer_models import *
 from data_loaders.detective_data_loader import DetectiveDataLoader
+from utils import extract_guilty_suspect
 
 
 def calculate_accuracy(predictions, true_labels):
@@ -41,9 +42,10 @@ def evaluate_model(
         true_labels = batch['true_labels']
         indices = batch['indices']
         generated_cots = cot_model.generate_batch(mystery_texts, suspects_lists)
-        predictions = final_answer_model.generate_batch(mystery_texts, suspects_lists, generated_cots)
+        raw_predictions = final_answer_model.generate_batch(mystery_texts, suspects_lists, generated_cots)
+        # predictions = [extract_guilty_suspect(prediction) for prediction in raw_predictions]
         
-        results.extend(zip(generated_cots, predictions, true_labels, indices))
+        results.extend(zip(generated_cots, raw_predictions, true_labels, indices))
     
     # Save results to CSV
     results_df = pd.DataFrame(results, columns=['generated_cots', 'predictions', 'true_labels', 'indices'])
@@ -51,8 +53,8 @@ def evaluate_model(
     print(f"Results saved to results_{model_type}.csv")
     
     # Calculate and display accuracy
-    predictions = [result['predictions'] for result in results]
-    true_labels = [result['true_labels'] for result in results]
+    predictions = [result[1] for result in results]
+    true_labels = [result[2] for result in results]
     
     accuracy = calculate_accuracy(predictions, true_labels)
     
