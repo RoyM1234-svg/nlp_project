@@ -4,9 +4,8 @@ from tqdm import tqdm
 import argparse
 from sklearn.metrics import accuracy_score
 from models.detective_model import DetectiveModel
-from models.llama_detective_model import LLamaDetectiveModel
-from models.deepseek_detective_model import DeepSeekR1DistillQwen1_5BDetectiveModel
-from models.gemma3_detective_model import Gemma3DetectiveModel
+from models.cot_models import *
+from models.final_answer_models import *
 from data_loaders.detective_data_loader import DetectiveDataLoader
 
 
@@ -20,29 +19,34 @@ def calculate_accuracy(predictions, true_labels):
     return accuracy
 
 
-def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int, model_type: str):
+def evaluate_model(
+        cot_model: DetectiveModel,
+        final_answer_model: DetectiveModel,
+        csv_path: str,
+        num_samples: Optional[int],
+        batch_size: int,
+        model_type: str
+        ):
+    
     df = pd.read_csv(csv_path)
     if num_samples:
         df = df.sample(num_samples)
-    data_loader = DetectiveDataLoader(model, df, batch_size=batch_size, shuffle=False)
+    data_loader = DetectiveDataLoader(df, batch_size=batch_size, shuffle=False)
 
     results = []
 
     for batch in tqdm(data_loader, desc="Generating batch"):
-        print(batch['inputs']['input_ids'].shape)
-        input_ids = batch['inputs']['input_ids']
-        attention_mask = batch['inputs']['attention_mask']
-        generated_cots, predictions = model.generate_batch(input_ids, attention_mask)
-        for i in range(len(predictions)):
-            results.append({
-                'generated_cots': generated_cots[i],
-                'predictions': predictions[i],
-                'true_labels': batch['true_labels'][i],
-                'indices': batch['indices'][i],
-            })
+        mystery_texts = batch['mystery_texts']
+        suspects_lists = batch['suspects_lists']
+        true_labels = batch['true_labels']
+        indices = batch['indices']
+        generated_cots = cot_model.generate_batch(mystery_texts, suspects_lists)
+        predictions = final_answer_model.generate_batch(mystery_texts, suspects_lists, generated_cots)
+        
+        results.extend(zip(generated_cots, predictions, true_labels, indices))
     
     # Save results to CSV
-    results_df = pd.DataFrame(results)
+    results_df = pd.DataFrame(results, columns=['generated_cots', 'predictions', 'true_labels', 'indices'])
     results_df.to_csv(f"results_{model_type}.csv", index=False)
     print(f"Results saved to results_{model_type}.csv")
     
@@ -68,15 +72,18 @@ def main():
 
     # Create the appropriate model based on the model_type argument
     if args.model_type == "llama":
-        model = LLamaDetectiveModel(args.model_path, is_quantized=True)
+        cot_model = LLamaDetectiveModel(args.model_path, is_quantized=True)
+        final_answer_model = LLamaFinalAnswerModel(args.model_path, is_quantized=True)
     elif args.model_type == "deepseek":
-        model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
+        cot_model = DeepSeekDetectiveModel(is_quantized=True)
+        final_answer_model = DeepSeekFinalAnswerModel(is_quantized=True)
     elif args.model_type == "gemma3":
-        model = Gemma3DetectiveModel(is_quantized=False)
+        cot_model = Gemma3DetectiveModel(is_quantized=False)
+        final_answer_model = Gemma3FinalAnswerModel(is_quantized=False)
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
     
-    evaluate_model(model, args.csv_path, args.num_samples, args.batch_size, args.model_type)
+    evaluate_model(cot_model, final_answer_model, args.csv_path, args.num_samples, args.batch_size, args.model_type)
     
     
 

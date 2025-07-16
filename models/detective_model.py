@@ -10,14 +10,14 @@ class DetectiveModel(ABC):
                  max_new_tokens=2000,
                  temperature=0.7,
                  top_p=0.9,
-                 stopping_criteria=None,
+                 do_sample=True,
                 ):
         self.model_path = model_path
         self.is_quantized = is_quantized
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self.top_p = top_p
-        self.stopping_criteria = stopping_criteria
+        self.do_sample = do_sample
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model()
 
@@ -46,17 +46,36 @@ class DetectiveModel(ABC):
         self.model.eval()
 
     @torch.no_grad()
-    def generate_batch(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> tuple[list[str], list[str]]:
+    def generate_batch(
+        self,
+        mystery_texts: list[str],
+        suspects_lists: list[list[str]],
+        generated_cots: list[str] | None = None,
+        ) -> list[str]:
         """Generate text for a batch of tokenized inputs."""
-        input_ids = input_ids.to(self.device)
-        attention_mask = attention_mask.to(self.device)
+        if generated_cots is None:
+            prompts = [self.create_prompt(mystery, suspects) 
+                        for mystery, suspects in zip(mystery_texts, suspects_lists)]
+        else:
+            prompts = [self.create_prompt(mystery, suspects, cot) 
+                        for mystery, suspects, cot in zip(mystery_texts, suspects_lists, generated_cots)]
+            
+        inputs = self.tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        )
+        
+        input_ids = inputs['input_ids'].to(self.device)
+        attention_mask = inputs['attention_mask'].to(self.device)
 
         outputs = self.model.generate(
             input_ids=input_ids,
             attention_mask=attention_mask,
             max_new_tokens=self.max_new_tokens,
             temperature=self.temperature,
-            do_sample=True,
+            do_sample=self.do_sample,
             top_p=self.top_p,
             pad_token_id=self.tokenizer.pad_token_id,
             eos_token_id=self.tokenizer.eos_token_id,
@@ -69,38 +88,24 @@ class DetectiveModel(ABC):
             skip_special_tokens=True
         )
 
-        predicted_suspects = [self.extract_guilty_suspect(text) for text in generated_texts]
-        
-        return generated_texts, predicted_suspects
+        return generated_texts
     
     def get_tokenizer(self) -> AutoTokenizer:
         return self.tokenizer
         
     @abstractmethod
-    def create_prompt(self, mystery_text: str, suspects: list[str]) -> str:
+    def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         """Create a prompt for the model based on the mystery and suspects.
         
         Args:
             mystery_text: The mystery story text
             suspects: List of suspect names
-            
+            cot: The generated COT text (if provided)
         Returns:
             Formatted prompt string for the model
         """
         pass
 
-    @staticmethod
-    @abstractmethod
-    def extract_guilty_suspect(full_response: str) -> str:
-        """Extract the guilty suspect from the model response.
-        
-        Args:
-            full_response: The full response from the model
-            
-        Returns:
-            The guilty suspect name
-        """
-        pass
 
 
 

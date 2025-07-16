@@ -1,6 +1,6 @@
 
 import argparse
-from models.llama_detective_model import LLamaDetectiveModel
+from models.cot_models.llama_detective_model import LLamaDetectiveModel
 from data_loaders.detective_data_loader import DetectiveDataLoader
 import pandas as pd
 from tqdm import tqdm
