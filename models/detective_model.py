@@ -101,16 +101,3 @@ class DetectiveModel(ABC):
             Formatted prompt string for the model
         """
         pass
-
-    @staticmethod
-    @abstractmethod
-    def extract_guilty_suspect(full_response: str) -> str:
-        """Extract the guilty suspect from the model response.
-        
-        Args:
-            full_response: The full response from the model
-            
-        Returns:
-            The guilty suspect name
-        """
-        pass
