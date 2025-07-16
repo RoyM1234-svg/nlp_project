@@ -4,10 +4,12 @@ from tqdm import tqdm
 import argparse
 from sklearn.metrics import accuracy_score
 from models.detective_model import DetectiveModel
+from models.llama_cot_model import LLamaCotModel
 from models.llama_detective_model import LLamaDetectiveModel
 from models.deepseek_detective_model import DeepSeekR1DistillQwen1_5BDetectiveModel
 from models.gemma3_detective_model import Gemma3DetectiveModel
 from data_loaders.detective_data_loader import DetectiveDataLoader
+from models.llama_final_answer_model import LLamaFinalAnswerModel
 
 
 def calculate_accuracy(predictions, true_labels):
@@ -19,8 +21,44 @@ def calculate_accuracy(predictions, true_labels):
     accuracy = accuracy_score(true_clean, pred_clean)
     return accuracy
 
+def generate_from_model(model, mysteries, suspects, cots=None, k=1):
+    """
+       Helper to create prompts, tokenize, and generate outputs from a model.
 
-def evaluate_model(cot_model: DetectiveModel, final_answer_model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int, k: int):
+       Parameters:
+       - model: The model with `create_prompt`, `tokenizer`, `generate_batch`.
+       - mysteries: List of mystery texts.
+       - suspects: List of suspects lists.
+       - cots: Optional list of COTs for prompt creation.
+       - k: Number of generations per prompt.
+
+       Returns:
+       - Generated outputs from the model.
+       """
+    if cots is None:
+        prompts = [
+            model.create_prompt(mystery, suspect_list)
+            for mystery, suspect_list in zip(mysteries, suspects)
+        ]
+    else:
+        prompts = [
+            model.create_prompt(mystery, suspect_list, cot)
+            for mystery, suspect_list, cot in zip(mysteries, suspects, cots)
+        ]
+
+    inputs = model.tokenizer(
+        prompts,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+    )
+
+    outputs = model.generate_batch(inputs['input_ids'], inputs['attention_mask'], k=k)
+    return outputs
+
+
+def evaluate_model(cot_model: DetectiveModel, final_answer_model: DetectiveModel, csv_path: str,
+                   num_samples: Optional[int], batch_size: int, k: int):
     df = pd.read_csv(csv_path)
     if num_samples:
         df = df.sample(num_samples)
@@ -29,29 +67,21 @@ def evaluate_model(cot_model: DetectiveModel, final_answer_model: DetectiveModel
     results = []
 
     for batch in tqdm(data_loader, desc="Generating batch"):
-        prompts = [cot_model.create_prompt_for_cot(mystery, suspects)
-                    for mystery, suspects in zip(batch['mystery_texts'], batch['suspects'])]
-            
-        inputs = cot_model.tokenizer(
-                prompts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-            )
-        
-        generated_cots = cot_model.generate_batch(inputs['input_ids'], inputs['attention_mask'], k=k)
 
-        prompts = [final_answer_model.create_prompt_for_final_answer(mystery, suspects, cot)
-                            for mystery, suspects, cot in zip(batch['mystery_texts'], batch['suspects'], generated_cots)]
-        
-        inputs = final_answer_model.tokenizer(
-            prompts,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
+        generated_cots = generate_from_model(
+            cot_model,
+            batch['mystery_texts'],
+            batch['suspects'],
+            k=k
         )
-        
-        final_answers = final_answer_model.generate_batch(inputs['input_ids'], inputs['attention_mask'], k=k)
+
+        final_answers = generate_from_model(
+            final_answer_model,
+            batch['mystery_texts'],
+            batch['suspects'],
+            cots=generated_cots,
+            k=k
+        )
         
         for i in range(len(final_answers)):
             results.append({
@@ -147,8 +177,8 @@ def main():
 
     # Create the appropriate model based on the model_type argument
     if args.model_type == "llama":
-        cot_model = LLamaDetectiveModel(args.model_path, is_quantized=True)
-        final_answer_model = LLamaDetectiveModel(args.model_path, is_quantized=True, temperature=0.1, top_p=0.5, max_new_tokens=1)
+        cot_model = LLamaCotModel(args.model_path)
+        final_answer_model = LLamaFinalAnswerModel(args.model_path)
     # elif args.model_type == "deepseek":
     #     model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
     # elif args.model_type == "gemma3":
@@ -157,9 +187,6 @@ def main():
         raise ValueError(f"Unsupported model type: {args.model_type}")
     
     evaluate_model(cot_model, final_answer_model, args.csv_path, args.num_samples, args.batch_size, args.k)
-    
-    # evaluate_model_for_self_consistency(cot_model, final_answer_model, args.csv_path, args.num_samples, args.batch_size, args.k)
-    
     
 
 if __name__ == "__main__":

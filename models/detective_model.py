@@ -10,18 +10,14 @@ class DetectiveModel(ABC):
                  max_new_tokens=2000,
                  temperature=0.7,
                  top_p=0.9,
-                 stopping_criteria=None,
-                 task: str = "cot"
                 ):
         self.model_path = model_path
         self.is_quantized = is_quantized
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self.top_p = top_p
-        self.stopping_criteria = stopping_criteria
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model()
-        self.task = task
 
     def load_model(self):        
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
@@ -75,22 +71,35 @@ class DetectiveModel(ABC):
 
     def get_tokenizer(self) -> AutoTokenizer:
         return self.tokenizer
+
+    @staticmethod
+    def create_prompt_template(system_prompt: str, user_prompt: str, tokenizer) -> str:
+        """Helper function to create a prompt using a system and user prompt."""
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+
+        prompt = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+
+        return prompt
         
     @abstractmethod
-    def create_prompt_for_cot(self, mystery_text: str, suspects: list[str]) -> str:
+    def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         """Create a prompt for the model based on the mystery and suspects.
         
         Args:
             mystery_text: The mystery story text
             suspects: List of suspect names
+            cot: If not none - The chain of thought of the previous model
             
         Returns:
             Formatted prompt string for the model
         """
-        pass
-
-    @abstractmethod
-    def create_prompt_for_final_answer(self, mystery_text: str, suspects: list[str], cot:str) -> str:
         pass
 
     @staticmethod
@@ -105,55 +114,3 @@ class DetectiveModel(ABC):
             The guilty suspect name
         """
         pass
-
-
-    # --- Generate k samples ---
-    # @torch.no_grad()
-    # def generate_k_samples(self, mystery_text: str, suspects: list[str], k: int) -> list[tuple[str, str]]:
-    #     """
-    #     Generates k different outputs for a SINGLE prompt in one efficient call.
-    #
-    #     Args:
-    #         mystery_text: The mystery story text.
-    #         suspects: List of suspect names.
-    #         k: The number of different outputs to generate.
-    #
-    #     Returns:
-    #         A list of k (full_response, predicted_suspect) tuples.
-    #     """
-    #     prompt = self.create_prompt_for_cot(mystery_text, suspects)
-    #
-    #     # Tokenize the single prompt
-    #     inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-    #
-    #     # Generate k sequences from the single prompt
-    #     outputs = self.model.generate(
-    #         **inputs,
-    #         max_new_tokens=self.max_new_tokens,
-    #         temperature=self.temperature,
-    #         do_sample=True,
-    #         top_p=self.top_p,
-    #         pad_token_id=self.tokenizer.pad_token_id,
-    #         # --- THE KEY PARAMETERS ---
-    #         num_return_sequences=k,
-    #     )
-    #
-    #     # Decode all k outputs at once
-    #     # We need to slice the output to remove the prompt part
-    #     prompt_length = inputs.input_ids.shape[1]
-    #     generated_ids = outputs[:, prompt_length:]
-    #     generated_texts = self.tokenizer.batch_decode(
-    #         generated_ids,
-    #         skip_special_tokens=True
-    #     )
-    #
-    #     # Extract suspects from each of the k generated texts
-    #     results = []
-    #     for text in generated_texts:
-    #         predicted_suspect = self.extract_guilty_suspect(text)
-    #         results.append((text, predicted_suspect))
-    #
-    #     return results
-    #
-
-
