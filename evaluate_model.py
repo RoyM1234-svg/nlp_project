@@ -35,22 +35,17 @@ def generate_from_model(model, mysteries, suspects, cots=None, k=1):
        Returns:
        - Generated outputs from the model.
        """
-    if cots is None:
-        prompts = [
-            model.create_prompt(mystery, suspect_list)
-            for mystery, suspect_list in zip(mysteries, suspects)
-        ]
-    else:
-        prompts = [
-            model.create_prompt(mystery, suspect_list, cot)
-            for mystery, suspect_list, cot in zip(mysteries, suspects, cots)
-        ]
+
+    prompts = [
+        model.create_prompt(mystery, suspect_list, cot)
+        for mystery, suspect_list, cot in zip(mysteries, suspects, cots)
+    ]
 
     inputs = model.tokenizer(
         prompts,
         return_tensors="pt",
         padding=True,
-        truncation=True,
+        truncation=True
     )
 
     outputs = model.generate_batch(inputs['input_ids'], inputs['attention_mask'], k=k)
