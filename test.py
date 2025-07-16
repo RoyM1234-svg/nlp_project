@@ -1,6 +1,6 @@
 
 import argparse
-from models.detective_model import LLamaDetectiveModel
+from models.llama_detective_model import LLamaDetectiveModel
 from data_loaders.detective_data_loader import DetectiveDataLoader
 import pandas as pd
 from tqdm import tqdm
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Load the saved model
     model_path = args.model_path
-    model = LLamaDetectiveModel(model_path, is_quantized=True, use_stopping_criteria=False)
+    model = LLamaDetectiveModel(model_path, is_quantized=True)
 
     print(f"Model path: {model_path}")
     print(f"Tokenizer class: {type(model.tokenizer)}")
