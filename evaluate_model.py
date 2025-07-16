@@ -5,7 +5,7 @@ import argparse
 from sklearn.metrics import accuracy_score
 from models.detective_model import DetectiveModel
 from models.llama_detective_model import LLamaDetectiveModel
-from models.deepseek_detective_model import DeepSeekDetectiveModel
+from models.deepseek_detective_model import DeepSeekR1DistillQwen1_5BDetectiveModel
 from models.gemma3_detective_model import Gemma3DetectiveModel
 from data_loaders.detective_data_loader import DetectiveDataLoader
 
@@ -20,7 +20,7 @@ def calculate_accuracy(predictions, true_labels):
     return accuracy
 
 
-def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int):
+def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[int], batch_size: int, model_type: str):
     df = pd.read_csv(csv_path)
     if num_samples:
         df = df.sample(num_samples)
@@ -43,8 +43,8 @@ def evaluate_model(model: DetectiveModel, csv_path: str, num_samples: Optional[i
     
     # Save results to CSV
     results_df = pd.DataFrame(results)
-    results_df.to_csv("results.csv", index=False)
-    print(f"Results saved to results.csv")
+    results_df.to_csv(f"results_{model_type}.csv", index=False)
+    print(f"Results saved to results_{model_type}.csv")
     
     # Calculate and display accuracy
     predictions = [result['predictions'] for result in results]
@@ -70,13 +70,13 @@ def main():
     if args.model_type == "llama":
         model = LLamaDetectiveModel(args.model_path, is_quantized=True)
     elif args.model_type == "deepseek":
-        model = DeepSeekDetectiveModel(args.model_path)
+        model = DeepSeekR1DistillQwen1_5BDetectiveModel(is_quantized=True)
     elif args.model_type == "gemma3":
         model = Gemma3DetectiveModel(is_quantized=False)
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
     
-    evaluate_model(model, args.csv_path, args.num_samples, args.batch_size)
+    evaluate_model(model, args.csv_path, args.num_samples, args.batch_size, args.model_type)
     
     
 
