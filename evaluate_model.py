@@ -40,15 +40,23 @@ def evaluate_model(
         mystery_texts = batch['mystery_texts']
         suspects_lists = batch['suspects_lists']
         true_labels = batch['true_labels']
+        case_names = batch['case_names']
         indices = batch['indices']
         generated_cots = cot_model.generate_batch(mystery_texts, suspects_lists)
         raw_predictions = final_answer_model.generate_batch(mystery_texts, suspects_lists, generated_cots)
-        # predictions = [extract_guilty_suspect(prediction) for prediction in raw_predictions]
+        predictions = [extract_guilty_suspect(suspects_list, prediction) for prediction, suspects_list in zip(raw_predictions, suspects_lists)]
         
-        results.extend(zip(generated_cots, raw_predictions, true_labels, indices))
+        results.extend(zip(
+            case_names,
+            generated_cots,
+            suspects_lists,
+            predictions,
+            true_labels,
+            indices,
+            ))
     
     # Save results to CSV
-    results_df = pd.DataFrame(results, columns=['generated_cots', 'predictions', 'true_labels', 'indices'])
+    results_df = pd.DataFrame(results, columns=['case_names', 'generated_cots', 'suspects_lists', 'predictions', 'true_labels', 'indices'])
     results_df.to_csv(f"results_{model_type}.csv", index=False)
     print(f"Results saved to results_{model_type}.csv")
     

@@ -1,34 +1,19 @@
 """
-Utility functions for detective models.
-"""
+    Utility functions for detective models.
+    """
 
 import re
-from typing import Optional
 
 
-def extract_guilty_suspect(response: str) -> str:
-    """
-    Extract the guilty suspect name from model response.
+def extract_guilty_suspect(suspects_list: list[str], response: str) -> str:
+    response_lower = response.lower()
     
-    Looks for patterns like:
-    - GUILTY: [suspect name]
-    - GUILTY: suspect name
-    
-    Args:
-        response: The model's response text
+    for suspect in suspects_list:
+        suspect_lower = suspect.lower()
+        pattern = r'\b' + re.escape(suspect_lower) + r'\b'
         
-    Returns:
-        str: The extracted suspect name, or "Unknown" if not found
-    """
-    if not response:
-        return "Unknown"
+        if re.search(pattern, response_lower):
+            return suspect
     
-    cleaned_response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+    return "Unknown"
     
-    pattern = r'GUILTY:\s*\[?([^\]\n]+?)\]?(?:\s*$|\n)'
-    matches = re.findall(pattern, cleaned_response, re.IGNORECASE)
-    
-    if matches:
-        return matches[-1].strip()  # Take the last match in case of multiple
-    
-    return "Unknown" 

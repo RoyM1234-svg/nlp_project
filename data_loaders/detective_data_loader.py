@@ -20,6 +20,8 @@ class DetectiveDataLoader(DataLoader):
                          for opts in df['answer_options']]
         true_labels = [DetectiveDataLoader.parse_true_label(label) 
                       for label in df['answer']]
+        case_names = df['case_name'].tolist()
+        answer_options = df['answer_options'].tolist()
         
         return DetectiveDataset(mystery_texts, suspects_lists, true_labels)
     
@@ -49,11 +51,15 @@ class DetectiveDataLoader(DataLoader):
             mystery_texts = [item['mystery_text'] for item in batch]
             suspects_lists = [item['suspects'] for item in batch]
             true_labels = [item['true_label'] for item in batch]
+            case_names = [item['case_name'] for item in batch]
+            answer_options = [item['answer_options'] for item in batch]
             indices = [item['index'] for item in batch]
             
             return {
                 'mystery_texts': mystery_texts,
                 'suspects_lists': suspects_lists,
+                'case_names': case_names,
+                'answer_options': answer_options,
                 'true_labels': true_labels,
                 'indices': indices,
             }
