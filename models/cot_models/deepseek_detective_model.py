@@ -8,7 +8,7 @@ class DeepSeekDetectiveModel(DetectiveModel):
     def __init__(
         self,
         is_quantized: bool = True,
-        max_new_tokens: int = 1500,
+        max_new_tokens: int = 1300,
         temperature: float = 0.7,
         top_p: float = 0.9,
         do_sample: bool = True,
