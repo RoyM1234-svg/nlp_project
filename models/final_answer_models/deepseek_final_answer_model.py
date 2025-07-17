@@ -9,16 +9,12 @@ class DeepSeekFinalAnswerModel(DetectiveModel):
         self,
         is_quantized: bool = True,
         max_new_tokens: int = 100,
-        temperature: float = 0.1,
-        top_p: float = 0.5,
         do_sample: bool = False,
     ):
         super().__init__(
             model_path="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
             is_quantized=is_quantized,
             max_new_tokens=max_new_tokens,
-            temperature=temperature,
-            top_p=top_p,
             do_sample=do_sample,
         )
 

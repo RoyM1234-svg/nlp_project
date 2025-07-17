@@ -8,8 +8,8 @@ class DetectiveModel(ABC):
                  model_path,
                  is_quantized=True,
                  max_new_tokens=2000,
-                 temperature=0.7,
-                 top_p=0.9,
+                 temperature=None,
+                 top_p=None,
                  do_sample=True,
                 ):
         self.model_path = model_path
