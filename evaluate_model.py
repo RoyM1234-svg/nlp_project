@@ -60,9 +60,8 @@ def evaluate_model(
     results_df.to_csv(f"results_{model_type}.csv", index=False)
     print(f"Results saved to results_{model_type}.csv")
     
-    # Calculate and display accuracy
-    predictions = [result[1] for result in results]
-    true_labels = [result[2] for result in results]
+    predictions = [result[3] for result in results]  
+    true_labels = [result[4] for result in results]  
     
     accuracy = calculate_accuracy(predictions, true_labels)
     
