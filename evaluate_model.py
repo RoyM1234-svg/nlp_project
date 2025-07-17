@@ -53,10 +53,11 @@ def evaluate_model(
             predictions,
             true_labels,
             indices,
+            raw_predictions,
             ))
     
     # Save results to CSV
-    results_df = pd.DataFrame(results, columns=['case_names', 'generated_cots', 'suspects_lists', 'predictions', 'true_labels', 'indices'])
+    results_df = pd.DataFrame(results, columns=['case_names', 'generated_cots', 'suspects_lists', 'predictions', 'true_labels', 'indices', 'raw_predictions'])
     results_df.to_csv(f"results_{model_type}.csv", index=False)
     print(f"Results saved to results_{model_type}.csv")
     
