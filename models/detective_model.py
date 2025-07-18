@@ -52,7 +52,7 @@ class DetectiveModel(ABC):
         suspects_lists: list[list[str]],
         generated_cots: list[str] | None = None,
         ) -> list[str]:
-        """Generate text for a batch of tokenized inputs."""
+
         if generated_cots is None:
             prompts = [self.create_prompt(mystery, suspects) 
                         for mystery, suspects in zip(mystery_texts, suspects_lists)]
@@ -72,16 +72,20 @@ class DetectiveModel(ABC):
 
         print("batch shape: ", input_ids.shape)
 
-        outputs = self.model.generate(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            max_new_tokens=self.max_new_tokens,
-            temperature=self.temperature,
-            do_sample=self.do_sample,
-            top_p=self.top_p,
-            pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.tokenizer.eos_token_id,
-        )
+        generate_kwargs = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "max_new_tokens": self.max_new_tokens,
+            "do_sample": self.do_sample,
+            "pad_token_id": self.tokenizer.pad_token_id,
+            "eos_token_id": self.tokenizer.eos_token_id,
+        }
+
+        if self.do_sample:
+            generate_kwargs["temperature"] = self.temperature
+            generate_kwargs["top_p"] = self.top_p
+
+        outputs = self.model.generate(**generate_kwargs)
 
         prompt_length = input_ids.shape[1]
         generated_ids = outputs[:, prompt_length:]
