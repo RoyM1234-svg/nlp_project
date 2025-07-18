@@ -14,16 +14,8 @@ class LLamaFinalAnswerModel(DetectiveModel):
 
     def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
-        
-        instruction = """Your task is to solve a given mystery.
-The mystery is a detective puzzle presented as a short story.
-You will be given a list of suspects apart from the mystery content.
-Please give your final answer as just the name of the guilty suspect.
-Only one suspect from the list is guilty, and your task is to identify which one."""
 
-        user_prompt = f"""{instruction}
-
-Mystery Story:
+        user_prompt = f"""Mystery Story:
 {mystery_text}
 
 Suspects:
@@ -32,9 +24,11 @@ Suspects:
 Solution:
 {cot}
 
-Who is guilty?"""
+OUTPUT FORMAT: [Name only]
 
-        system_prompt = "You are an expert detective who identifies the guilty suspect by name."
+The guilty suspect is: """
+
+        system_prompt = "You are an expert detective who identifies the guilty suspect by name. Output ONLY the name with no explanation or reasoning."
 
         messages = [
             {"role": "system", "content": system_prompt},

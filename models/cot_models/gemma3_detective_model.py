@@ -9,10 +9,10 @@ class Gemma3DetectiveModel(DetectiveModel):
     """
     def __init__(
         self,
-        is_quantized: bool = True,
+        is_quantized: bool = False,
         max_new_tokens: int = 2000,
-        temperature: float = 0.3,
-        top_p: float = 0.95,
+        temperature: float = 0.7,
+        top_p: float = 0.9,
     ):
         super().__init__(
             model_path="google/gemma-3-1b-it",

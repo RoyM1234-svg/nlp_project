@@ -7,18 +7,14 @@ class Gemma3FinalAnswerModel(DetectiveModel):
     """
     def __init__(
         self,
-        is_quantized: bool = True,
+        is_quantized: bool = False,
         max_new_tokens: int = 100,
-        temperature: float = 0.1,
-        top_p: float = 0.5,
         do_sample: bool = False,
     ):
         super().__init__(
             model_path="google/gemma-3-1b-it",
             is_quantized=is_quantized,
             max_new_tokens=max_new_tokens,
-            temperature=temperature,
-            top_p=top_p,
             do_sample=do_sample,
         )
 
@@ -26,16 +22,7 @@ class Gemma3FinalAnswerModel(DetectiveModel):
         """This model has a small context- up to 32768 tokens"""
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
         
-        # Base instruction (modified to ask for direct suspect name)
-        instruction = """Your task is to solve a given mystery.
-The mystery is a detective puzzle presented as a short story.
-You will be given a list of suspects apart from the mystery content.
-Please give your final answer as just the name of the guilty suspect.
-Only one suspect from the list is guilty, and your task is to identify which one."""
-
-        user_prompt = f"""{instruction}
-
-Mystery Story:
+        user_prompt = f"""Mystery Story:
 {mystery_text}
 
 Suspects:
@@ -44,9 +31,11 @@ Suspects:
 Solution:
 {cot}
 
-Who is guilty?"""
+OUTPUT FORMAT: [Name only]
 
-        system_prompt = "You are an expert detective who identifies the guilty suspect by name."
+The guilty suspect is: """
+
+        system_prompt = "You are an expert detective who identifies the guilty suspect by name. Output ONLY the name with no explanation or reasoning."
 
         messages = [
             {"role": "system", "content": system_prompt},

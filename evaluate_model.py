@@ -12,7 +12,6 @@ from utils import extract_guilty_suspect
 
 def calculate_accuracy(predictions, true_labels):
     """Calculate accuracy for the predictions."""
-    # Convert to consistent format (handle potential string/int mismatches)
     pred_clean = [str(pred).strip().lower() for pred in predictions]
     true_clean = [str(true).strip().lower() for true in true_labels]
     
@@ -80,7 +79,6 @@ def main():
     parser.add_argument("--csv_path", type=str, default="data/detective-puzzles.csv")
     args = parser.parse_args()
 
-    # Create the appropriate model based on the model_type argument
     if args.model_type == "llama":
         cot_model = LLamaDetectiveModel(args.model_path, is_quantized=True)
         final_answer_model = LLamaFinalAnswerModel(args.model_path, is_quantized=True)

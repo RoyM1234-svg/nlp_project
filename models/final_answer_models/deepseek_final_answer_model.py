@@ -21,7 +21,8 @@ class DeepSeekFinalAnswerModel(DetectiveModel):
     def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
 
-        prompt = f"""You are a detective assistant. Output ONLY the name of the guilty suspect with no explanation or reasoning.
+        prompt = f"""<｜User｜>
+You are a detective assistant. Output ONLY the name of the guilty suspect with no explanation or reasoning.
 
 Mystery Story:
 {mystery_text}
@@ -34,7 +35,8 @@ Solution:
 
 OUTPUT FORMAT: [Name only]
 
-The guilty suspect is: """
+The guilty suspect is:
+<｜Assistant｜>"""
 
         return prompt
  
