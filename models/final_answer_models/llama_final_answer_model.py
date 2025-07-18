@@ -1,4 +1,3 @@
-import re
 from models.detective_model import DetectiveModel
 
 class LLamaFinalAnswerModel(DetectiveModel):
@@ -6,11 +5,9 @@ class LLamaFinalAnswerModel(DetectiveModel):
                  model_path,
                  is_quantized=True,
                  max_new_tokens=100,
-                 temperature=0.1,
-                 top_p=0.5,
                  do_sample=False
                  ):
-        super().__init__(model_path, is_quantized, max_new_tokens, temperature, top_p, do_sample)
+        super().__init__(model_path, is_quantized, max_new_tokens, do_sample)
 
     def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
