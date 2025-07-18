@@ -7,7 +7,12 @@ class LLamaFinalAnswerModel(DetectiveModel):
                  max_new_tokens=100,
                  do_sample=False
                  ):
-        super().__init__(model_path, is_quantized, max_new_tokens, do_sample)
+        super().__init__(
+            model_path=model_path,
+            is_quantized=is_quantized,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample
+        )
 
     def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
         suspects_list = "\n".join([f"- {suspect}" for suspect in suspects])
