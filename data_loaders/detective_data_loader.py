@@ -1,4 +1,4 @@
-from datasets.detective_dataset import DetectiveDataset
+from custom_datasets.detective_dataset import DetectiveDataset
 from torch.utils.data import DataLoader
 import pandas as pd
 
