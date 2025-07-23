@@ -8,12 +8,10 @@ from transformers.training_args import TrainingArguments
 import wandb
 import os
 import numpy as np
-from transformers.trainer_utils import EvalPrediction
+from transformers.trainer_utils import EvalPrediction, IntervalStrategy
 from transformers.trainer import Trainer
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-
-
-MAX_LEN = 512
 
 @dataclass
 class AdditionalTrainingArguments:
@@ -39,18 +37,25 @@ def read_csv(file_name: str) -> pd.DataFrame:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     return pd.read_csv(os.path.join(current_dir, file_name))
 
-def compute_metrics(pred: EvalPrediction):
-    logits, labels = pred
-    probs = 1 / (1 + (1 / np.exp(logits))) # sigmoid in NumPy
-    preds = (probs > 0.5).astype(np.int32)
-    acc   = (preds == labels).mean().item()
-    return {"accuracy": acc}
+def compute_metrics(eval_pred: EvalPrediction):
+    logits, labels = eval_pred
+    preds = np.argmax(logits, axis=-1)
+    acc = accuracy_score(labels, preds)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels, preds, average="binary"
+    )
+    return {
+        "accuracy": acc,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+    }
 
 def train_verifier(training_args: TrainingArguments, additional_args: AdditionalTrainingArguments):
     tokenizer = AutoTokenizer.from_pretrained(additional_args.model_name)
     model = AutoModelForSequenceClassification.from_pretrained(
         additional_args.model_name,
-        num_labels=1,
+        num_labels=2,
         problem_type = "single_label_classification"
     )
 
@@ -58,14 +63,10 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
 
     dataset = preprocess_data(df)
 
-    print(dataset)
-
     def tokenize_function(batch):
         return tokenizer(batch["text"], truncation=True)
     
     dataset = dataset.map(tokenize_function, batched=True)
-    dataset.set_format(type="torch",
-                   columns=["input_ids", "attention_mask", "label"])
 
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
@@ -80,8 +81,15 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
 
     trainer.train()
 
+    eval_metrics = trainer.evaluate()
+    accuracy = eval_metrics["eval_accuracy"]
+    precision = eval_metrics["eval_precision"]
+    recall = eval_metrics["eval_recall"]
+    f1 = eval_metrics["eval_f1"]
+
     trainer.save_model(training_args.output_dir)
 
+    return accuracy, precision, recall, f1
 
 def main():
 
@@ -96,6 +104,9 @@ def main():
     training_args.logging_strategy = "steps"
     training_args.logging_steps = 1
 
+    training_args.eval_strategy = IntervalStrategy.STEPS
+    training_args.eval_steps = 100
+
     wandb.init(project="verifier_training",
                name=f"batch_size_{additional_args.batch_size}_lr_{additional_args.lr}",
                config = {
@@ -105,7 +116,13 @@ def main():
                })
 
 
-    train_verifier(training_args, additional_args)
+    accuracy, precision, recall, f1 = train_verifier(training_args, additional_args)
+
+    with open(f"{training_args.output_dir}/metrics.txt", "w") as f:
+        f.write(f"Accuracy: {accuracy}\n")
+        f.write(f"Precision: {precision}\n")
+        f.write(f"Recall: {recall}\n")
+        f.write(f"F1: {f1}\n")
 
     wandb.finish()
 
