@@ -86,10 +86,6 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
 
     trainer.save_model(training_args.output_dir)
 
-    eval_results = trainer.evaluate()
-    print(eval_results)
-
-
 def main():
 
     parser = HfArgumentParser((TrainingArguments, AdditionalTrainingArguments)) # type: ignore
