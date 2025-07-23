@@ -8,7 +8,7 @@ class LLamaDetectiveModel(DetectiveModel):
     def __init__(self,
                  model_path,
                  is_quantized=True,
-                 max_new_tokens=1900,
+                 max_new_tokens=1300,
                  temperature=0.7,
                  top_p=0.9,
                 ):

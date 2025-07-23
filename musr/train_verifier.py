@@ -10,10 +10,8 @@ import os
 import numpy as np
 from transformers.trainer_utils import EvalPrediction
 from transformers.trainer import Trainer
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-
-
-MAX_LEN = 512
 
 @dataclass
 class AdditionalTrainingArguments:
@@ -39,18 +37,25 @@ def read_csv(file_name: str) -> pd.DataFrame:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     return pd.read_csv(os.path.join(current_dir, file_name))
 
-def compute_metrics(pred: EvalPrediction):
-    logits, labels = pred
-    probs = 1 / (1 + (1 / np.exp(logits))) # sigmoid in NumPy
-    preds = (probs > 0.5).astype(np.int32)
-    acc   = (preds == labels).mean().item()
-    return {"accuracy": acc}
+def compute_metrics(eval_pred: EvalPrediction):
+    logits, labels = eval_pred
+    preds = np.argmax(logits, axis=-1)
+    acc = accuracy_score(labels, preds)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels, preds, average="binary"
+    )
+    return {
+        "accuracy": acc,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+    }
 
 def train_verifier(training_args: TrainingArguments, additional_args: AdditionalTrainingArguments):
     tokenizer = AutoTokenizer.from_pretrained(additional_args.model_name)
     model = AutoModelForSequenceClassification.from_pretrained(
         additional_args.model_name,
-        num_labels=1,
+        num_labels=2,
         problem_type = "single_label_classification"
     )
 
@@ -59,6 +64,7 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
     dataset = preprocess_data(df)
 
     print(dataset)
+    print(set(dataset["train"]["label"]))
 
     def tokenize_function(batch):
         return tokenizer(batch["text"], truncation=True)
