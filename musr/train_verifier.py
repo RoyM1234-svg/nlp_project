@@ -103,6 +103,9 @@ def main():
     training_args.logging_strategy = "steps"
     training_args.logging_steps = 1
 
+    training_args.evaluation_strategy = "steps"
+    training_args.eval_steps = training_args.logging_steps
+
     wandb.init(project="verifier_training",
                name=f"batch_size_{additional_args.batch_size}_lr_{additional_args.lr}",
                config = {
