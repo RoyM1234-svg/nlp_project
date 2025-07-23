@@ -8,7 +8,7 @@ from transformers.training_args import TrainingArguments
 import wandb
 import os
 import numpy as np
-from transformers.trainer_utils import EvalPrediction
+from transformers.trainer_utils import EvalPrediction, IntervalStrategy
 from transformers.trainer import Trainer
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
@@ -84,7 +84,15 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
 
     trainer.train()
 
+    eval_metrics = trainer.evaluate()
+    accuracy = eval_metrics["accuracy"]
+    precision = eval_metrics["precision"]
+    recall = eval_metrics["recall"]
+    f1 = eval_metrics["f1"]
+
     trainer.save_model(training_args.output_dir)
+
+    return accuracy, precision, recall, f1
 
 def main():
 
@@ -99,8 +107,8 @@ def main():
     training_args.logging_strategy = "steps"
     training_args.logging_steps = 1
 
-    training_args.evaluation_strategy = "steps"
-    training_args.eval_steps = training_args.logging_steps
+    training_args.eval_strategy = IntervalStrategy.STEPS
+    training_args.eval_steps = 100
 
     wandb.init(project="verifier_training",
                name=f"batch_size_{additional_args.batch_size}_lr_{additional_args.lr}",
@@ -111,7 +119,13 @@ def main():
                })
 
 
-    train_verifier(training_args, additional_args)
+    accuracy, precision, recall, f1 = train_verifier(training_args, additional_args)
+
+    with open(f"{training_args.output_dir}/metrics.txt", "w") as f:
+        f.write(f"Accuracy: {accuracy}\n")
+        f.write(f"Precision: {precision}\n")
+        f.write(f"Recall: {recall}\n")
+        f.write(f"F1: {f1}\n")
 
     wandb.finish()
 
