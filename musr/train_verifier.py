@@ -63,9 +63,6 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
 
     dataset = preprocess_data(df)
 
-    print(dataset)
-    print(set(dataset["train"]["label"]))
-
     def tokenize_function(batch):
         return tokenizer(batch["text"], truncation=True)
     
@@ -85,10 +82,10 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
     trainer.train()
 
     eval_metrics = trainer.evaluate()
-    accuracy = eval_metrics["accuracy"]
-    precision = eval_metrics["precision"]
-    recall = eval_metrics["recall"]
-    f1 = eval_metrics["f1"]
+    accuracy = eval_metrics["eval_accuracy"]
+    precision = eval_metrics["eval_precision"]
+    recall = eval_metrics["eval_recall"]
+    f1 = eval_metrics["eval_f1"]
 
     trainer.save_model(training_args.output_dir)
 
