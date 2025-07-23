@@ -64,8 +64,6 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
         return tokenizer(batch["text"], truncation=True)
     
     dataset = dataset.map(tokenize_function, batched=True)
-    dataset.set_format(type="torch",
-                   columns=["input_ids", "attention_mask", "label"])
 
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
@@ -81,6 +79,9 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
     trainer.train()
 
     trainer.save_model(training_args.output_dir)
+
+    eval_results = trainer.evaluate()
+    print(eval_results)
 
 
 def main():
