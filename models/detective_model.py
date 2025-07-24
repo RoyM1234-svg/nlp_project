@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.utils.quantization_config import BitsAndBytesConfig
 import torch
+import gc
 
 class DetectiveModel(ABC):
     def __init__(self,
@@ -98,6 +99,15 @@ class DetectiveModel(ABC):
     
     def get_tokenizer(self) -> AutoTokenizer:
         return self.tokenizer
+    
+    def unload_model(self):
+        del self.model
+        del self.tokenizer
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        gc.collect()
         
     @abstractmethod
     def create_prompt(self, mystery_text: str, suspects: list[str], cot: str | None = None) -> str:
