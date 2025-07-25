@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score
 from models.detective_model import DetectiveModel
 from models.cot_models import *
 from models.final_answer_models import *
+from models.verifier_model import VerifierModel
 from data_loaders.cot_data_loader import DetectiveDataLoader
 from data_loaders.verifier_data_loader import VerifierDataLoader
 from utils import extract_guilty_suspect
@@ -130,6 +131,47 @@ def evaluate_model(args: argparse.Namespace):
     print("Model unloaded")
 
     verifier_data_loader = VerifierDataLoader(cot_results_df, batch_size=args.batch_size, shuffle=False)
+
+    verifier_model = VerifierModel(args.verifier_model_path)
+
+    verifier_results = []
+
+    for batch in tqdm(verifier_data_loader, desc="Verifying batch"):
+        text = batch['text']
+        case_names = batch['case_names']
+        mystery_texts = batch['mystery_texts']
+        suspects_lists = batch['suspects_lists']
+        true_labels = batch['true_labels']
+        generated_cots = batch['generated_cots']
+
+        probs_correct = verifier_model.predict_prob_correct(text)
+
+        for i in range(len(case_names)):
+            verifier_results.append({
+                'case_names': case_names[i],
+                'mystery_texts': mystery_texts[i],
+                'suspects_lists': suspects_lists[i],
+                'true_labels': true_labels[i],
+                'generated_cots': generated_cots[i],
+                'probs_correct': probs_correct[i],
+            })
+
+    verifier_results_df = pd.DataFrame(verifier_results)
+    verifier_results_df.to_csv(f"results_{args.model_type}_verifier_k_{args.k}.csv", index=False)
+    print(f"Results saved to results_{args.model_type}_verifier_k_{args.k}.csv")
+
+    # Filter to keep only rows with maximum score for each case name
+    filtered_results_df = verifier_results_df.loc[verifier_results_df.groupby('case_names')['probs_correct'].idxmax()]
+    
+
+    
+
+    verifier_model.unload()
+
+    
+
+
+
 
     
 

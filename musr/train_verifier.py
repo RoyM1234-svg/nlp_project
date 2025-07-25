@@ -12,7 +12,7 @@ from transformers.trainer_utils import EvalPrediction, IntervalStrategy
 from transformers.trainer import Trainer
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-
+VERIFIER_QUESTION = "Who is the guilty suspect?"
 @dataclass
 class AdditionalTrainingArguments:
     lr: float = field(metadata={"help": "Learning rate for training."})
@@ -25,7 +25,7 @@ def preprocess_data(df: pd.DataFrame) -> DatasetDict:
     df["text"] = (
         df["story"]
         + "\nSuspects: " + df["suspects"]
-        + "\nQuestion: " + df["question"]
+        + "\nQuestion: " + VERIFIER_QUESTION
         + "\nChain of Thought: " + df["flat_chain"]
     )
 
