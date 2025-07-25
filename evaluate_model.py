@@ -164,7 +164,25 @@ def evaluate_model(args: argparse.Namespace):
     filtered_results_df = verifier_results_df.loc[verifier_results_df.groupby('case_names')['probs_correct'].idxmax()]
 
     final_answer_dataset = DataFrameDataset(filtered_results_df)
-    final_answer_data_loader = DataLoader(final_answer_dataset, batch_size=args.batch_size, shuffle=False)
+
+    def custom_collate_fn(batch):
+        case_names = [item['case_names'] for item in batch]
+        mystery_texts = [item['mystery_texts'] for item in batch]
+        suspects_lists = [item['suspects_lists'] for item in batch]
+        true_labels = [item['true_labels'] for item in batch]
+        generated_cots = [item['generated_cots'] for item in batch]
+        probs_correct = [item['probs_correct'] for item in batch]
+
+        return {
+            'case_names': case_names,
+            'mystery_texts': mystery_texts,
+            'suspects_lists': suspects_lists,
+            'true_labels': true_labels,
+            'generated_cots': generated_cots,
+            'probs_correct': probs_correct,
+        }
+
+    final_answer_data_loader = DataLoader(final_answer_dataset, batch_size=args.batch_size, shuffle=False,collate_fn=custom_collate_fn)
 
     if args.model_type == "llama":
         final_answer_model = LLamaFinalAnswerModel(args.model_path, is_quantized=True)
