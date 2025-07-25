@@ -111,7 +111,7 @@ def evaluate_model(args: argparse.Namespace):
         indices = batch['indices']
         generated_cots = cot_model.generate_batch(mystery_texts, suspects_lists)
         
-        for i in range(case_names):
+        for i in range(len(case_names)):
             cot_results.append({
                 'case_names': case_names[i],
                 'mystery_texts': mystery_texts[i],
