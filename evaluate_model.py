@@ -6,7 +6,8 @@ from sklearn.metrics import accuracy_score
 from models.detective_model import DetectiveModel
 from models.cot_models import *
 from models.final_answer_models import *
-from data_loaders.detective_data_loader import DetectiveDataLoader
+from data_loaders.cot_data_loader import DetectiveDataLoader
+from data_loaders.verifier_data_loader import VerifierDataLoader
 from utils import extract_guilty_suspect
 
 
@@ -110,10 +111,10 @@ def evaluate_model(args: argparse.Namespace):
         indices = batch['indices']
         generated_cots = cot_model.generate_batch(mystery_texts, suspects_lists)
         
-
         for i in range(case_names):
             cot_results.append({
                 'case_names': case_names[i],
+                'mystery_texts': mystery_texts[i],
                 'generated_cots': generated_cots[i],
                 'suspects_lists': suspects_lists[i],
                 'true_labels': true_labels[i],
@@ -127,6 +128,15 @@ def evaluate_model(args: argparse.Namespace):
 
     cot_model.unload_model()
     print("Model unloaded")
+
+    verifier_data_loader = VerifierDataLoader(cot_results_df, batch_size=args.batch_size, shuffle=False)
+
+    
+
+
+
+
+
 
 
 
