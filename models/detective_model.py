@@ -123,5 +123,7 @@ class DetectiveModel(ABC):
         pass
 
 
+    def __del__(self):
+        self.unload_model()
 
 

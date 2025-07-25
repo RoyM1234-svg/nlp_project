@@ -125,7 +125,7 @@ def evaluate_model(args: argparse.Namespace):
     cot_results_df.to_csv(f"results_{args.model_type}_cot_k_{args.k}.csv", index=False)
     print(f"Results saved to results_{args.model_type}_cot_k_{args.k}.csv")
 
-    cot_model.unload_model()
+    del cot_model
     print("Model unloaded")
 
     verifier_data_loader = VerifierDataLoader(cot_results_df, batch_size=args.batch_size, shuffle=False)
@@ -158,7 +158,7 @@ def evaluate_model(args: argparse.Namespace):
     verifier_results_df.to_csv(f"results_{args.model_type}_verifier_k_{args.k}.csv", index=False)
     print(f"Results saved to results_{args.model_type}_verifier_k_{args.k}.csv")
 
-    verifier_model.unload()
+    del verifier_model
     print("Verifier model unloaded")
 
     filtered_results_df = verifier_results_df.loc[verifier_results_df.groupby('case_names')['probs_correct'].idxmax()]
