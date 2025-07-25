@@ -3,14 +3,12 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import argparse
 from sklearn.metrics import accuracy_score
-from models.detective_model import DetectiveModel
 from models.cot_models import *
 from models.final_answer_models import *
 from models.verifier_model import VerifierModel
 from data_loaders.cot_data_loader import DetectiveDataLoader
 from data_loaders.verifier_data_loader import VerifierDataLoader
 from utils import extract_guilty_suspect
-from datasets import Dataset
 from custom_datasets.data_frame_data_set import DataFrameDataset
 
 def calculate_accuracy(predictions: list[str], true_labels: list[str]) -> float:
@@ -133,14 +131,11 @@ def evaluate_model_baseline(
 
 def evaluate_model(args: argparse.Namespace):
     if args.model_type == "llama":
-        cot_model = LLamaDetectiveModel(args.model_path, is_quantized=True)
-        # final_answer_model = LLamaFinalAnswerModel(args.model_path, is_quantized=True)
+        cot_model = LLamaDetectiveModel(args.model_path, is_quantized=True)    
     elif args.model_type == "deepseek":
         cot_model = DeepSeekDetectiveModel(is_quantized=True)
-        # final_answer_model = DeepSeekFinalAnswerModel(is_quantized=True)
     elif args.model_type == "gemma3":
         cot_model = Gemma3DetectiveModel(is_quantized=False)
-        # final_answer_model = Gemma3FinalAnswerModel(is_quantized=False)
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
     
@@ -170,7 +165,6 @@ def evaluate_model(args: argparse.Namespace):
                 'true_labels': true_labels[i]
             })
     
-    # Save results to CSV
     cot_results_df = pd.DataFrame(cot_results)
     cot_results_df.to_csv(f"results_{args.model_type}_cot_k_{args.k}.csv", index=False)
     print(f"Results saved to results_{args.model_type}_cot_k_{args.k}.csv")
