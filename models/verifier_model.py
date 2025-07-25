@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import gc
 
 class VerifierModel():
     def __init__(self, model_path: str):
@@ -9,6 +10,7 @@ class VerifierModel():
     def load(self, model_path: str):
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model.eval()
 
     @torch.no_grad()
     def predict_prob_correct(self, str_input: list[str]) -> list[float]:
@@ -22,7 +24,10 @@ class VerifierModel():
     def unload(self):
         del self.model
         del self.tokenizer
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        gc.collect()
 
     def __del__(self):
         self.unload()
