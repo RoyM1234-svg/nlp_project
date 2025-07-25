@@ -1,5 +1,5 @@
-from typing import Optional
 import pandas as pd
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 import argparse
 from sklearn.metrics import accuracy_score
@@ -10,15 +10,15 @@ from models.verifier_model import VerifierModel
 from data_loaders.cot_data_loader import DetectiveDataLoader
 from data_loaders.verifier_data_loader import VerifierDataLoader
 from utils import extract_guilty_suspect
+from datasets import Dataset
+from custom_datasets.data_frame_data_set import DataFrameDataset
 
-
-def calculate_accuracy(predictions, true_labels):
-    """Calculate accuracy for the predictions."""
+def calculate_accuracy(predictions: list[str], true_labels: list[str]) -> float:
     pred_clean = [str(pred).strip().lower() for pred in predictions]
     true_clean = [str(true).strip().lower() for true in true_labels]
     
     accuracy = accuracy_score(true_clean, pred_clean)
-    return accuracy
+    return float(accuracy)
 
 
 def evaluate_model_baseline(
@@ -109,7 +109,6 @@ def evaluate_model(args: argparse.Namespace):
         suspects_lists = batch['suspects_lists']
         true_labels = batch['true_labels']
         case_names = batch['case_names']
-        indices = batch['indices']
         generated_cots = cot_model.generate_batch(mystery_texts, suspects_lists)
         
         for i in range(len(case_names)):
@@ -118,8 +117,7 @@ def evaluate_model(args: argparse.Namespace):
                 'mystery_texts': mystery_texts[i],
                 'generated_cots': generated_cots[i],
                 'suspects_lists': suspects_lists[i],
-                'true_labels': true_labels[i],
-                'indices': indices[i],
+                'true_labels': true_labels[i]
             })
     
     # Save results to CSV
@@ -160,41 +158,56 @@ def evaluate_model(args: argparse.Namespace):
     verifier_results_df.to_csv(f"results_{args.model_type}_verifier_k_{args.k}.csv", index=False)
     print(f"Results saved to results_{args.model_type}_verifier_k_{args.k}.csv")
 
-    # Filter to keep only rows with maximum score for each case name
-    filtered_results_df = verifier_results_df.loc[verifier_results_df.groupby('case_names')['probs_correct'].idxmax()]
-    
-
-    
-
     verifier_model.unload()
+    print("Verifier model unloaded")
 
-    
+    filtered_results_df = verifier_results_df.loc[verifier_results_df.groupby('case_names')['probs_correct'].idxmax()]
 
+    final_answer_dataset = DataFrameDataset(filtered_results_df)
+    final_answer_data_loader = DataLoader(final_answer_dataset, batch_size=args.batch_size, shuffle=False)
 
+    if args.model_type == "llama":
+        final_answer_model = LLamaFinalAnswerModel(args.model_path, is_quantized=True)
+    elif args.model_type == "deepseek":
+        final_answer_model = DeepSeekFinalAnswerModel(is_quantized=True)
+    elif args.model_type == "gemma3":
+        final_answer_model = Gemma3FinalAnswerModel(is_quantized=False)
+    else:
+        raise ValueError(f"Unsupported model type: {args.model_type}")
 
+    final_answer_results = []
 
-    
+    for batch in tqdm(final_answer_data_loader, desc="Generating final answers"):
+        mystery_texts = batch['mystery_texts']
+        suspects_lists = batch['suspects_lists']
+        true_labels = batch['true_labels']
+        generated_cots = batch['generated_cots']
+        case_names = batch['case_names']
+        probs_correct = batch['probs_correct']
 
+        raw_predictions = final_answer_model.generate_batch(mystery_texts, suspects_lists, generated_cots)
+        predictions = [extract_guilty_suspect(suspects_list, prediction) for prediction, suspects_list in zip(raw_predictions, suspects_lists)]
 
+        for i in range(len(case_names)):
+            final_answer_results.append({
+                'case_names': case_names[i],
+                'mystery_texts': mystery_texts[i],
+                'suspects_lists': suspects_lists[i],
+                'generated_cots': generated_cots[i],
+                'raw_predictions': raw_predictions[i],
+                'predictions': predictions[i],
+                'true_labels': true_labels[i],
+                'probs_correct': probs_correct[i],
+            })
 
+    final_answer_results_df = pd.DataFrame(final_answer_results)
+    final_answer_results_df.to_csv(f"results_{args.model_type}_final_answer_k_{args.k}.csv", index=False)
+    print(f"Results saved to results_{args.model_type}_final_answer_k_{args.k}.csv")
 
+    accuracy = calculate_accuracy(final_answer_results_df['predictions'].tolist(), final_answer_results_df['true_labels'].tolist())
+    print(f"Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
 
-
-
-
-    
-    
-    # predictions = [result[3] for result in cot_results]  
-    # true_labels = [result[4] for result in cot_results]  
-    
-    # accuracy = calculate_accuracy(predictions, true_labels)
-    
-    # print(f"\nAccuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
-    
-    # return accuracy
-
-    
-
+    return accuracy
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate model on detective puzzles dataset.')
@@ -210,7 +223,6 @@ def main():
 
     if args.baseline:
         evaluate_model_baseline(args)
-
     else:
         evaluate_model(args)
     

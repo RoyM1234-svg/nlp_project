@@ -51,14 +51,12 @@ class DetectiveDataLoader(DataLoader):
             suspects_lists = [item['suspects'] for item in batch]
             true_labels = [item['true_label'] for item in batch]
             case_names = [item['case_name'] for item in batch]
-            indices = [item['index'] for item in batch]
             
             return {
                 'mystery_texts': mystery_texts,
                 'suspects_lists': suspects_lists,
                 'case_names': case_names,
                 'true_labels': true_labels,
-                'indices': indices,
             }
         
         return collate
