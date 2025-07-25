@@ -46,10 +46,3 @@ class VerifierDataLoader(DataLoader):
         
         return VerifierDataset(texts, mystery_texts, suspects_lists, true_labels, case_names, generated_cots)
         
-        
-        
-        
-        
-        
-        
-        

@@ -14,7 +14,6 @@ class DetectiveDataLoader(DataLoader):
 
     @staticmethod
     def create_dataset(df: pd.DataFrame) -> DetectiveDataset:
-        """Create dataset from DataFrame."""
         mystery_texts = df['mystery_text'].tolist()
         suspects_lists = [DetectiveDataLoader.parse_answer_options(opts) 
                          for opts in df['answer_options']]
@@ -45,7 +44,6 @@ class DetectiveDataLoader(DataLoader):
     
     @staticmethod
     def collate_fn():
-        """Custom collate function that creates prompts and tokenizes them."""
         def collate(batch):
             mystery_texts = [item['mystery_text'] for item in batch]
             suspects_lists = [item['suspects'] for item in batch]

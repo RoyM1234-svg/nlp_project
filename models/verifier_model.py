@@ -8,13 +8,13 @@ class VerifierModel():
         self.load(model_path)
 
     def load(self, model_path: str):
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, device_map="auto")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model.eval()
 
     @torch.no_grad()
     def predict_prob_correct(self, str_input: list[str]) -> list[float]:
-        inputs = self.tokenizer(str_input, return_tensors="pt", padding=True, truncation=True)
+        inputs = self.tokenizer(str_input, return_tensors="pt", padding=True, truncation=True).to(self.model.device)
         outputs = self.model(**inputs)
         logits = outputs.logits
         probabilities = torch.softmax(logits, dim=-1)

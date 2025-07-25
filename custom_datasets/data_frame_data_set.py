@@ -10,3 +10,4 @@ class DataFrameDataset(Dataset):
     
     def __getitem__(self, idx):
         return self.df.iloc[idx].to_dict()
+    

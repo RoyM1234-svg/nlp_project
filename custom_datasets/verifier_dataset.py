@@ -29,3 +29,4 @@ class VerifierDataset(Dataset):
             'generated_cots': self.generated_cots[idx],
             'text': self.texts[idx],
         }
+    
