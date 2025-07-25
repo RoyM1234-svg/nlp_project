@@ -216,7 +216,7 @@ def main():
     parser.add_argument('--model_type', type=str, default="llama", choices=["llama", "deepseek", "gemma3"], help='Type of model to use: llama/ deepseek/ gemma3')
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--csv_path", type=str, default="data/detective-puzzles.csv")
-    parser.add_argument("--verifier_model_path", type=str, default="verifier_model")
+    parser.add_argument("--verifier_model_path", type=str, default="musr/verifier_model")
     parser.add_argument("--baseline", type=bool, default=False, help="Whether to evaluate the baseline model or the our new model structure")
     parser.add_argument("--k", type=int, default=1, help="Self Consistency K")
     args = parser.parse_args()
