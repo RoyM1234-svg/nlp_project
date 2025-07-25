@@ -87,7 +87,8 @@ def train_verifier(training_args: TrainingArguments, additional_args: Additional
     recall = eval_metrics["eval_recall"]
     f1 = eval_metrics["eval_f1"]
 
-    trainer.save_model(training_args.output_dir)
+    model.save_pretrained(training_args.output_dir)
+    tokenizer.save_pretrained(training_args.output_dir)
 
     return accuracy, precision, recall, f1
 
