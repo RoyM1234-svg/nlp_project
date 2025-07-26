@@ -95,6 +95,11 @@ class DetectiveModel(ABC):
             skip_special_tokens=True
         )
 
+        del input_ids, attention_mask, outputs, generated_ids
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect() 
+
         return generated_texts
     
     def get_tokenizer(self) -> AutoTokenizer:
