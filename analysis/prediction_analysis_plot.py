@@ -143,46 +143,36 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
             print(f"Warning: Error reading verifier CSV file: {e}. Skipping probability analysis.")
             has_verifier = False
     
-    # Create the third figure for accuracy progression (k=1 to k=3)
     plt.figure(3, figsize=(12, 7))
     
-    # Data points for k=1 and k=3
     k_values = [1, 3]
     accuracy_values = [27.2, 30.4]
     
-    # Create smooth line with single color
-    # Plot the smooth line from k=1 to k=3
     plt.plot(k_values, accuracy_values, '-', color='#4CAF50', linewidth=4, label='Accuracy progression')
     
-    # Plot the data points
     plt.plot([k_values[0]], [accuracy_values[0]], 'o', color='#4CAF50', markersize=12)
     plt.plot([k_values[1]], [accuracy_values[1]], 'o', color='#4CAF50', markersize=12)
     
-    # Customize the plot
     plt.title('Accuracy Improvement from k=1 to k=3', fontsize=16, fontweight='bold', pad=20)
     plt.xlabel('Self Consistency Variable k', fontsize=14, fontweight='bold')
     plt.ylabel('Accuracy (%)', fontsize=14, fontweight='bold')
     plt.xlim(0.5, 3.5)
     plt.ylim(25, 32)
     
-    # Add value labels
     plt.text(k_values[0], accuracy_values[0] + 0.3, f'{accuracy_values[0]:.1f}%', 
              ha='center', va='bottom', fontsize=12, fontweight='bold', color='#4CAF50')
     plt.text(k_values[1], accuracy_values[1] + 0.3, f'{accuracy_values[1]:.1f}%', 
              ha='center', va='bottom', fontsize=12, fontweight='bold', color='#4CAF50')
     
-    # Customize grid and layout
     plt.grid(axis='y', alpha=0.3, linestyle='--')
     plt.xticks(k_values)
     plt.tight_layout()
     
-    # Add summary text
     improvement = accuracy_values[1] - accuracy_values[0]
     accuracy_summary = (f'k=1 Accuracy: {accuracy_values[0]:.1f}% | k=3 Accuracy: {accuracy_values[1]:.1f}% | '
                        f'Improvement: +{improvement:.1f} percentage points')
     plt.figtext(0.5, 0.02, accuracy_summary, ha='center', fontsize=10, style='italic')
     
-    # Save or show the accuracy plot
     if output_path:
         accuracy_output_path = output_path.replace('.png', '_accuracy.png') if output_path.endswith('.png') else f"{output_path}_accuracy.png"
         plt.savefig(accuracy_output_path, dpi=300, bbox_inches='tight')
