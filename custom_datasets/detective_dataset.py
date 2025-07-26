@@ -2,8 +2,6 @@ from torch.utils.data import Dataset
 from typing import List
 
 class DetectiveDataset(Dataset):
-    """PyTorch Dataset for detective puzzles."""
-    
     def __init__(self, 
                  mystery_texts: List[str], 
                  suspects_lists: List[List[str]],
@@ -26,4 +24,3 @@ class DetectiveDataset(Dataset):
             'index': idx
         }
     
-
