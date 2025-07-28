@@ -18,7 +18,7 @@ class AdditionalTrainingArguments:
     lr: float = field(metadata={"help": "Learning rate for training."})
     batch_size: int = field(default=16, metadata={"help": "Batch size for training."})
     save_model_path: str = field(default="verifier_model", metadata={"help": "Path to save the model."})
-    model_name: str = field(default="microsoft/deberta-v3-base", metadata={"help": "Name of the model to use."})
+    model_name: str = field(default="google/bigbird-roberta-base", metadata={"help": "Name of the model to use."})
 
 
 def preprocess_data(df: pd.DataFrame) -> DatasetDict:
