@@ -43,85 +43,102 @@ nlp_project/
 └── utils.py                # Utility functions
 ```
 
-## Prerequisites
+## Reproducing Paper Results (Google Colab)
 
-  ### Environment Setup
+### Step 1: Setup Environment
 
-  Install all dependencies using the provided requirements file:
-  ```bash
-  pip install -r requirements.txt
-  ```
+1. **Open a new Google Colab notebook** and ensure you're using a GPU runtime:
+   - Go to `Runtime` → `Change runtime type` → Select `GPU` as Hardware accelerator
 
-Setup Weights & Biases 
-```bash
-wandb login <YOUR_WANDB_API_KEY>
+2. **Mount Google Drive**:
+   ```python
+   from google.colab import drive
+   drive.mount('/content/drive')
+   %cd /content/drive/MyDrive/
+   ```
+
+3. **Clone the repository and install dependencies**:
+   ```python
+   !git clone https://github.com/YOUR_USERNAME/nlp_project.git
+   %cd nlp_project
+   
+   # Install dependencies
+   !pip install wandb datasets transformers accelerate bitsandbytes
+
+   # Setup Weights & Biases
+   import wandb
+   wandb.login()  
+   ```
+
+### Step 2: Train the Verifier Model
+
+```python
+# Navigate to musr directory
+%cd musr
+
+# Train the verifier model
+!python train_verifier.py 
+--model_name google/bigbird-roberta-base 
+--lr 5e-6 
+--batch_size 2 
+--save_model_path verifier_model 
+--output_dir verifier_model 
+--num_train_epochs 3 
+--bf16
+
+# Return to project root
+%cd ..
 ```
 
-## Reproducing Paper Results
+### Step 3: Run Main Evaluation Pipeline
 
-### Step 1: Train the Verifier Model
+1. **Login to Hugging Face** and ensure you have the license for "meta-llama/Llama-3.1-8B-Instruct":
+   ```python
+   from huggingface_hub import login
+   login() 
+   ```
 
-The verifier model is crucial for the self-consistency mechanism. Train it using the MUSR dataset:
+2. **Configure memory allocation** to avoid fragmentation:
+   ```python
+   %env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+   ```
 
-```bash
-cd musr
-python train_verifier.py \
-  --model_name google/bigbird-roberta-base \
-  --lr 5e-6 \
-  --batch_size 2 \
-  --save_model_path verifier_model \
-  --output_dir verifier_model \
-  --num_train_epochs 3 \
-  --bf16
-```
+3. **Run the evaluation pipeline**:
+   ```python
+   # k=1 (baseline)
+   !python evaluate_model.py \
+      --model_type "llama" \
+      --model_path "meta-llama/Llama-3.1-8B-Instruct" \
+      --batch_size 20 \
+      --k 1
 
-**Arguments:**
-- `--model_name`: Use BigBird RoBERTa as a base model for the verifier
-- `--lr`: Learning rate
-- `--batch_size`: Training batch size
-- `--num_train_epochs`: Number of training epochs
-- `--bf16`: Use 16-bit training for faster computation
+   # k=3 (self-consistency)
+   !python evaluate_model.py \
+      --model_type "llama" \
+      --model_path "meta-llama/Llama-3.1-8B-Instruct" \
+      --batch_size 20 \
+      --k 3
+   ```
 
-### Step 2: Run Main Evaluation Pipeline
+**Alternative Models:**
+- `"google/gemma-3-1b-it"` (requires license)
+- `"deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"` (no license required)
 
+### Step 4: Generate Analysis and Visualizations
 
-```bash
-# k=1 (baseline)
-python evaluate_model.py \
-   --model_type "llama" \
-   --model_path "meta-llama/Llama-3.1-8B-Instruct" \
-   --batch_size 20 \
-   --k 1
+```python
+# Comprehensive result analysis
+!python analysis/analyze_results.py results/k_1/results_llama_final_answer_k_1.csv --model-name "LLaMA k=1"
+!python analysis/analyze_results.py results/k_3/results_llama_final_answer_k_3.csv --model-name "LLaMA k=3"
 
-# k=3 (self-consistency)
-python evaluate_model.py \
-   --model_type "llama" \
-   --model_path "meta-llama/Llama-3.1-8B-Instruct" \
-   --batch_size 20 \
-   --k 3
-```
-
-**Note**: Results will be saved as CSV files in the project root. 
-
-### Step 3: Generate Analysis and Visualizations
-
-#### 3.1 Comprehensive Result Analysis
-```bash
-python analysis/analyze_results.py results/k_1/results_llama_final_answer_k_1.csv --model-name "LLaMA k=1"
-python analysis/analyze_results.py results/k_3/results_llama_final_answer_k_3.csv --model-name "LLaMA k=3"
-```
-
-#### 3.2 Generate Prediction Analysis Plots
-```bash
-python analysis/prediction_analysis_plot.py \
+# Generate prediction analysis plots for k=1
+!python analysis/prediction_analysis_plot.py \
   results/k_1/results_llama_final_answer_k_1.csv \
   --verifier results/k_1/results_llama_verifier_k_1.csv \
   --output plots/llama_k_1/analysis
-  
 
-# Create plots for LLaMA k=3
-mkdir -p plots/llama_k_3  
-python analysis/prediction_analysis_plot.py \
+# Generate prediction analysis plots for k=3
+!python analysis/prediction_analysis_plot.py \
   results/k_3/results_llama_final_answer_k_3.csv \
   --verifier results/k_3/results_llama_verifier_k_3.csv \
   --output plots/llama_k_3/analysis
@@ -145,5 +162,3 @@ After running the complete pipeline, you will have:
    - Accuracy scores
    - Error analysis
    - Verifier probability distributions
-
-
