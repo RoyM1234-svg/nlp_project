@@ -37,9 +37,9 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
     correct_count = ((df['predictions'] == df['true_labels']) & non_unknown_mask).sum()
     incorrect_count = ((df['predictions'] != df['true_labels']) & non_unknown_mask).sum()
     
-    categories = ['Unknown', 'Correct', 'Incorrect']
-    counts = [unknown_count, correct_count, incorrect_count]
-    colors = ['#FFA726', '#4CAF50', '#FF6B6B']  
+    categories = ['Unknown', 'Incorrect', 'Correct']
+    counts = [unknown_count, incorrect_count, correct_count]
+    colors = ['#FFA726', '#FF6B6B', '#4CAF50']  # Orange, Red, Green  
     
     plt.figure(1, figsize=(12, 7))
     bars1 = plt.bar(categories, counts, color=colors, alpha=0.8, edgecolor='black', linewidth=1)
@@ -58,7 +58,7 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
     correct_pct = (correct_count / total_predictions) * 100
     incorrect_pct = (incorrect_count / total_predictions) * 100
     
-    for i, (count, pct) in enumerate(zip(counts, [unknown_pct, correct_pct, incorrect_pct])):
+    for i, (count, pct) in enumerate(zip(counts, [unknown_pct, incorrect_pct, correct_pct])):
         if count > total_predictions * 0.05:  
             plt.text(i, count/2, f'{pct:.1f}%', ha='center', va='center', 
                      fontsize=11, fontweight='bold', color='white')
@@ -67,10 +67,7 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
     plt.tight_layout()
     
     accuracy_pct = (correct_count / (correct_count + incorrect_count)) * 100 if (correct_count + incorrect_count) > 0 else 0
-    count_summary = (f'Total: {total_predictions} | Unknown: {unknown_count} ({unknown_pct:.1f}%) | '
-                    f'Correct: {correct_count} ({correct_pct:.1f}%) | Incorrect: {incorrect_count} ({incorrect_pct:.1f}%) | '
-                    f'Accuracy (excl. Unknown): {accuracy_pct:.1f}%')
-    plt.figtext(0.5, 0.02, count_summary, ha='center', fontsize=10, style='italic')
+
     
     if output_path:
         count_output_path = output_path.replace('.png', '_counts.png') if output_path.endswith('.png') else f"{output_path}_counts.png"
@@ -106,11 +103,15 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
                     mean_prob_unknown = merged_df.loc[unknown_mask, 'probs_correct'].mean() if unknown_mask.sum() > 0 else 0
                     mean_prob_correct = merged_df.loc[correct_mask, 'probs_correct'].mean() if correct_mask.sum() > 0 else 0
                     mean_prob_incorrect = merged_df.loc[incorrect_mask, 'probs_correct'].mean() if incorrect_mask.sum() > 0 else 0
+                    mean_prob_golden_cot = 0.9322  # Golden CoT mean probability
                     
-                    mean_probs = [mean_prob_unknown, mean_prob_correct, mean_prob_incorrect]
+                    # Categories for mean verifier probability plot (including Golden CoT)
+                    verifier_categories = ['Unknown', 'Incorrect', 'Correct', 'Golden CoT']
+                    mean_probs = [mean_prob_unknown, mean_prob_incorrect, mean_prob_correct, mean_prob_golden_cot]
+                    verifier_colors = ['#FFA726', '#FF6B6B', '#4CAF50', '#9C27B0']  # Orange, Red, Green, Purple
                     
                     plt.figure(2, figsize=(12, 7))
-                    bars2 = plt.bar(categories, mean_probs, color=colors, alpha=0.8, edgecolor='black', linewidth=1)
+                    bars2 = plt.bar(verifier_categories, mean_probs, color=verifier_colors, alpha=0.8, edgecolor='black', linewidth=1)
                     
                     plt.title('Mean Verifier Probabilities by Prediction Type', fontsize=16, fontweight='bold', pad=20)
                     plt.xlabel('Prediction Type', fontsize=14, fontweight='bold')
@@ -125,9 +126,7 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
                     plt.grid(axis='y', alpha=0.3, linestyle='--')
                     plt.tight_layout()
                     
-                    prob_summary = (f'Mean Probabilities - Unknown: {mean_prob_unknown:.3f} | '
-                                   f'Correct: {mean_prob_correct:.3f} | Incorrect: {mean_prob_incorrect:.3f}')
-                    plt.figtext(0.5, 0.02, prob_summary, ha='center', fontsize=10, style='italic')
+
                     
                     if output_path:
                         prob_output_path = output_path.replace('.png', '_probabilities.png') if output_path.endswith('.png') else f"{output_path}_probabilities.png"
@@ -191,8 +190,9 @@ def create_prediction_analysis_plot(csv_file_path, verifier_csv_path=None, outpu
     if has_verifier:
         print(f"\nMean Verifier Probabilities:")
         print(f"Unknown predictions: {mean_prob_unknown:.3f}")
-        print(f"Correct predictions: {mean_prob_correct:.3f}")
         print(f"Incorrect predictions: {mean_prob_incorrect:.3f}")
+        print(f"Correct predictions: {mean_prob_correct:.3f}")
+        print(f"Golden CoT: {mean_prob_golden_cot:.3f}")
     
     print(f"\nAccuracy Progression:")
     print(f"k=1 Accuracy: {accuracy_values[0]:.1f}%")
