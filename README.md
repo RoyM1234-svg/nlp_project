@@ -48,7 +48,7 @@ nlp_project/
 ### Step 1: Setup Environment
 
 1. **Open a new Google Colab notebook** and ensure you're using a GPU runtime:
-   - Go to `Runtime` → `Change runtime type` → Select `GPU` as Hardware accelerator
+   - Go to `Runtime` → `Change runtime type` → Select `A100 GPU` as Hardware accelerator
 
 2. **Mount Google Drive**:
    ```python
