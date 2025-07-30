@@ -10,7 +10,7 @@ The project implements a multi-stage pipeline for solving detective puzzles:
 4. **Final Answer Extraction**: The selected reasoning is used to determine the guilty suspect
 
 ### Supported Models
-- ** LLaMA meta-llama/Llama-3.1-8B-Instruct (Qunatized)* . If you have larger memory in your GPU you are welcomed to try with a larger llama model.
+- **LLaMA meta-llama/Llama-3.1-8B-Instruct (Qunatized)** . If you have larger memory in your GPU you are welcomed to try with a larger llama model.
 
 ## Repository Structure
 
@@ -69,6 +69,14 @@ nlp_project/
    ```
 
 ### Step 2: Train the Verifier Model
+**Verifier Training Arguments:**
+- `--model_name`: Base model for the verifier
+- `--lr`: Learning rate 
+- `--batch_size`: Training batch size
+- `--save_model_path`: Directory to save the trained verifier model
+- `--output_dir`: Directory for training outputs and checkpoints
+- `--num_train_epochs`: Number of training epochs
+- `--bf16`: Use 16-bit precision for faster training and reduced memory usage
 
 ```python
 # Navigate to musr directory
@@ -102,6 +110,12 @@ nlp_project/
    ```
 
 3. **Run the evaluation pipeline**:
+   **Evaluation Arguments:**
+- `--model_type`: Type of model ("llama")
+- `--model_path`: HuggingFace model identifier or local path to the model
+- `--batch_size`: Number of samples processed simultaneously (20 is optimal for 8B models)
+- `--k`: Number of reasoning chains generated per puzzle for self-consistency (1=baseline)
+
    ```python
    # k=1 (baseline)
    !python evaluate_model.py \
@@ -119,7 +133,17 @@ nlp_project/
    ```
 
 ### Step 4: Generate Analysis and Visualizations
+**Analysis Arguments:**
 
+**analyze_results.py:**
+- `<results_file>`: Path to the final answer results CSV file
+- `--model-name`: Display name for the model in the analysis output
+
+**prediction_analysis_plot.py:**
+- `<results_file>`: Path to the final answer results CSV file containing predictions
+- `--verifier`: Path to the verifier results CSV file containing confidence scores
+- `--output`: Directory path where generated plots will be saved
+  
 ```python
 # Comprehensive result analysis
 !python analysis/analyze_results.py results/k_1/results_llama_final_answer_k_1.csv --model-name "LLaMA k=1"
@@ -153,6 +177,7 @@ After running the complete pipeline, you will have:
    - Self-consistency improvement plots
 
 3. **Performance Metrics**:
-   - Accuracy scores
-   - Error analysis
-   - Verifier probability distributions
+   - **Accuracy**: Percentage of correctly identified suspects
+   - **Unknown Rate**: Percentage of cases where model couldn't determine guilt
+   - **Verifier Confidence**: Probability scores indicating reasoning quality
+   - **Self-Consistency Improvement**: Performance gain from k=1 to k=3
