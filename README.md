@@ -11,8 +11,6 @@ The project implements a multi-stage pipeline for solving detective puzzles:
 
 ### Supported Models
 - **LLaMA** (quantized)
-- **DeepSeek-R1-Distill-Qwen-1.5B** 
-- **Gemma3**
 
 ## Repository Structure
 
@@ -119,10 +117,6 @@ nlp_project/
       --batch_size 20 \
       --k 3
    ```
-
-**Alternative Models:**
-- `"google/gemma-3-1b-it"` (requires license)
-- `"deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"` (no license required)
 
 ### Step 4: Generate Analysis and Visualizations
 
