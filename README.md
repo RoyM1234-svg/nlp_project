@@ -43,7 +43,7 @@ nlp_project/
 └── utils.py                # Utility functions
 ```
 
-## Reproducing Paper Results (Google Colab)
+## Reproducing Project Results
 
 ### Step 1: Setup Environment
 
