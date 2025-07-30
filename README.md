@@ -10,7 +10,8 @@ The project implements a multi-stage pipeline for solving detective puzzles:
 4. **Final Answer Extraction**: The selected reasoning is used to determine the guilty suspect
 
 ### Supported Models
-- **LLaMA** (quantized)
+- ** All LLaMA versions*(Qunatized)* .
+- We evaluated with meta-llama/Llama-3.1-8B-Instruct(quntaized for memory efficiency). If you have larger memory you are welcomed to try with bigger models.
 
 ## Repository Structure
 
